@@ -4,7 +4,30 @@
 
 > Torrent — Ownership of when money becomes available.
 
-**Status: repository scaffold / not implemented.** This repo is one of **exactly four meaningful independent codebases** in the Torrent Stellar-native project. It is not a placeholder created merely to increase Drips Wave submissions.
+**Status: early vertical slice (dashboard, coverage, rights, funding / transfer-proposal / claim signing requests). Builds and passes tests; NOT connected to a live Testnet; no wallet integration; NOT production.** This repo is one of **exactly four meaningful independent codebases** in the Torrent Stellar-native project. It is not a placeholder created merely to increase Drips Wave submissions.
+
+## Honest status
+| Item | State |
+|---|---|
+| Landing, sign-in (dev token + public address), circles list/create | implemented |
+| Circle page: coverage panel, rights table, funding, transfer proposal, claim, signing-request panel with polling | implemented; 36 tests (view models, components, page flows, API client, OpenAPI contract) |
+| Honest states: loading, empty, retryable outage, refusal, expired, SUBMITTED vs CONFIRMED, reconciling | implemented |
+| Recipient approval screen, invitations, audit view, claim history | **not built** |
+| Wallet connection (signing happens outside the app; signed XDR is pasted) | **not built** |
+| End-to-end against real torrent-api / indexer / Testnet | **never run** (no deployment exists). Tests use stubbed API clients |
+| Authentication | API dev-token adapter only |
+
+The app never asks for or stores a secret key. See `docs/adr/0001-web-design.md`.
+
+## Local startup
+```bash
+npm ci
+npm run check      # typecheck + eslint + vitest
+npm run build      # next build (passes)
+cp .env.example .env.local   # NEXT_PUBLIC_API_BASE_URL -> a running torrent-api
+npm run dev        # http://localhost:3000
+```
+Stop with Ctrl-C. Needs `torrent-api` (which needs `torrent-indexer`, which needs a deployed `torrent-contracts`). Consumes torrent-api OpenAPI v1 (`fixtures/api-openapi.v1.json`, mirrored from torrent-api@3044b0d era).
 
 ## Owns
 Savings-circle dashboard, governance and identity UX, fully-funded payout inventory, swap/transfer requests, signing and reporting
