@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <header className="mx-auto flex max-w-5xl items-center gap-3 p-4">
           <Image src="/brand/mark.svg" alt="" width={32} height={32} unoptimized />
           <Link href="/" className="text-xl font-semibold">Torrent</Link>
-          <nav aria-label="Main" className="ml-auto"><Link href="/circles" className="underline">Circles</Link></nav>
+          <nav aria-label="Main" className="ml-auto"><Link href="/circles" className="underline">Circles</Link> <Link href="/invitations" className="ml-3 underline">Join</Link></nav>
         </header>
         <main id="main" className="mx-auto max-w-5xl p-4"><Providers>{children}</Providers></main>
       </body>
