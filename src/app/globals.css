@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #42deb4;
+  --color-ink: #00191c;
+  --color-paper: #fbf8f1;
+  --color-accent: #a5f9de;
+  --bg: var(--color-paper);
+  --fg: var(--color-ink);
+  --card: #ffffff;
+  --muted: #4b5f61;
+  --line: #d5dcd9;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #00191c; --fg: #fbf8f1; --card: #052a2e; --muted: #9db8b8; --line: #14464b; }
+}
+@theme inline {
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-brand: var(--color-primary);
+}
+body { background: var(--bg); color: var(--fg); font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif; }
+.num { font-family: ui-monospace, "IBM Plex Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
