@@ -1,28 +1,176 @@
 @import "tailwindcss";
+@import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
 
+/*
+ * Torrent design tokens. Brand colors come from brand/tokens.json:
+ * primary #42DEB4, ink/dark #00191C, onDark/paper #FBF8F1, accent #A5F9DE.
+ * Theme: follows the OS by default; [data-theme] on <html> pins light or dark.
+ */
 :root {
   --color-primary: #42deb4;
   --color-ink: #00191c;
   --color-paper: #fbf8f1;
   --color-accent: #a5f9de;
+
   --bg: var(--color-paper);
+  --bg-subtle: #f3efe4;
   --fg: var(--color-ink);
   --card: #ffffff;
-  --muted: #4b5f61;
-  --line: #d5dcd9;
+  --elevated: #ffffff;
+  --muted: #4a5e60;
+  --line: #e2ded2;
+  --line-strong: #cdc8b9;
+  --brand: var(--color-primary);
+  --brand-hover: #2fcfa4;
+  --brand-ink: var(--color-ink);
+  /* primary is too light for text on paper; this darker step keeps 4.5:1 contrast */
+  --brand-text: #08735c;
+  --brand-soft: #dff8ef;
+  --dot: rgba(0, 25, 28, 0.09);
+
+  --good-fg: #05603f; --good-bg: #dcf7ea; --good-line: #34b981;
+  --warn-fg: #7a4a00; --warn-bg: #fdf0d2; --warn-line: #e3a008;
+  --bad-fg: #9b1c1c; --bad-bg: #fde4e4; --bad-line: #e5484d;
+  --pending-fg: #1e4f7a; --pending-bg: #e1eefb; --pending-line: #4b8fd6;
+  --neutral-fg: #3b4d4f; --neutral-bg: #ece8dc; --neutral-line: var(--line-strong);
+
+  --shadow: 0 1px 2px rgba(0, 25, 28, 0.04), 0 8px 24px -12px rgba(0, 25, 28, 0.12);
+  color-scheme: light;
 }
+
+:root[data-theme="dark"] {
+  --bg: #00191c;
+  --bg-subtle: #021f23;
+  --fg: var(--color-paper);
+  --card: #032428;
+  --elevated: #052c31;
+  --muted: #9ab4b3;
+  --line: #10393e;
+  --line-strong: #1b4c52;
+  --brand-hover: #6be6c5;
+  --brand-text: #42deb4;
+  --brand-soft: #0a3a37;
+  --dot: rgba(165, 249, 222, 0.08);
+  --good-fg: #8af0c8; --good-bg: #0b3a2f; --good-line: #2bb685;
+  --warn-fg: #f9d48a; --warn-bg: #3a2c0b; --warn-line: #d39a1d;
+  --bad-fg: #ffb3b3; --bad-bg: #431a1d; --bad-line: #e5484d;
+  --pending-fg: #a9d1fb; --pending-bg: #0f2e4a; --pending-line: #4b8fd6;
+  --neutral-fg: #c4d6d5; --neutral-bg: #0b3337; --neutral-line: var(--line-strong);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -16px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #00191c; --fg: #fbf8f1; --card: #052a2e; --muted: #9db8b8; --line: #14464b; }
+  :root:not([data-theme="light"]) {
+    --bg: #00191c;
+    --bg-subtle: #021f23;
+    --fg: var(--color-paper);
+    --card: #032428;
+    --elevated: #052c31;
+    --muted: #9ab4b3;
+    --line: #10393e;
+    --line-strong: #1b4c52;
+    --brand-hover: #6be6c5;
+    --brand-text: #42deb4;
+    --brand-soft: #0a3a37;
+    --dot: rgba(165, 249, 222, 0.08);
+    --good-fg: #8af0c8; --good-bg: #0b3a2f; --good-line: #2bb685;
+    --warn-fg: #f9d48a; --warn-bg: #3a2c0b; --warn-line: #d39a1d;
+    --bad-fg: #ffb3b3; --bad-bg: #431a1d; --bad-line: #e5484d;
+    --pending-fg: #a9d1fb; --pending-bg: #0f2e4a; --pending-line: #4b8fd6;
+    --neutral-fg: #c4d6d5; --neutral-bg: #0b3337; --neutral-line: var(--line-strong);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -16px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
 }
+
 @theme inline {
   --color-bg: var(--bg);
+  --color-bg-subtle: var(--bg-subtle);
   --color-fg: var(--fg);
   --color-card: var(--card);
+  --color-elevated: var(--elevated);
   --color-muted: var(--muted);
   --color-line: var(--line);
-  --color-brand: var(--color-primary);
+  --color-line-strong: var(--line-strong);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-text: var(--brand-text);
+  --color-brand-soft: var(--brand-soft);
+  --color-ink: var(--color-ink);
+  --color-paper: var(--color-paper);
+  --color-accent: var(--color-accent);
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --shadow-card: var(--shadow);
 }
-body { background: var(--bg); color: var(--fg); font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif; }
-.num { font-family: ui-monospace, "IBM Plex Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
-@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
-:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+
+html { scroll-behavior: smooth; scroll-padding-top: 5rem; -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: var(--color-accent); color: var(--color-ink); }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; border-radius: 6px; }
+
+/* Decorative dotted field used behind hero/sections. */
+.dot-field {
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Tone helpers (status chips and cards). */
+.tone-good { --t-fg: var(--good-fg); --t-bg: var(--good-bg); --t-line: var(--good-line); }
+.tone-warn { --t-fg: var(--warn-fg); --t-bg: var(--warn-bg); --t-line: var(--warn-line); }
+.tone-bad { --t-fg: var(--bad-fg); --t-bg: var(--bad-bg); --t-line: var(--bad-line); }
+.tone-pending { --t-fg: var(--pending-fg); --t-bg: var(--pending-bg); --t-line: var(--pending-line); }
+.tone-neutral { --t-fg: var(--neutral-fg); --t-bg: var(--neutral-bg); --t-line: var(--neutral-line); }
+
+/* ---------- Motion ---------- */
+/* Entrance reveal: hidden only once JS has marked the document, so no-JS readers see everything. */
+html.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+html.js [data-reveal][data-shown="true"] { opacity: 1; transform: none; }
+
+@keyframes tr-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes tr-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes tr-flow { from { transform: translateX(-30%); } to { transform: translateX(130%); } }
+@keyframes tr-ping { 0% { transform: scale(1); opacity: 0.7; } 80%, 100% { transform: scale(2.4); opacity: 0; } }
+/* 12 s ownership-transfer loop: before (0-40%) -> proposed (40-60%) -> confirmed (60-95%) -> back. */
+@keyframes tr-before { 0%, 38% { opacity: 1; } 42%, 96% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes tr-after { 0%, 58% { opacity: 0; } 62%, 94% { opacity: 1; } 98%, 100% { opacity: 0; } }
+@keyframes tr-mid { 0%, 38% { opacity: 0; } 42%, 58% { opacity: 1; } 62%, 100% { opacity: 0; } }
+@keyframes tr-highlight { 0%, 38% { border-color: var(--line); } 42%, 94% { border-color: var(--brand); } 98%, 100% { border-color: var(--line); } }
+@keyframes tr-move { 0%, 40% { transform: translateX(0); opacity: 0; } 44% { opacity: 1; } 58% { transform: translateX(100%); opacity: 1; } 60%, 100% { transform: translateX(100%); opacity: 0; } }
+
+.anim-fill { transform-origin: left; animation: tr-fill 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s both; }
+.anim-float { animation: tr-float 7s ease-in-out infinite; }
+.anim-flow { animation: tr-flow 3.2s linear infinite; }
+.anim-ping { animation: tr-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+.anim-before { animation: tr-before 12s ease-in-out infinite; }
+.anim-after { opacity: 0; animation: tr-after 12s ease-in-out infinite; }
+.anim-mid { opacity: 0; animation: tr-mid 12s ease-in-out infinite; }
+.anim-highlight { animation: tr-highlight 12s ease-in-out infinite; }
+.anim-move { opacity: 0; animation: tr-move 12s ease-in-out infinite; }
+
+/* FAQ disclosure marker */
+details > summary { list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+details[open] .faq-icon { transform: rotate(45deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html.js [data-reveal] { opacity: 1; transform: none; }
+}
