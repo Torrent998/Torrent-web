@@ -9,13 +9,15 @@
 ## Honest status
 | Item | State |
 |---|---|
-| Landing, sign-in (dev token + public address), circles list/create | implemented |
-| Circle page: coverage panel, rights table, funding, transfer proposal, claim, signing-request panel with polling | implemented; 36 tests (view models, components, page flows, API client, OpenAPI contract) |
+| Wallet-signature sign-in (challenge -> sign -> session), `WalletAdapter` interface | implemented |
+| Adapters | **Manual** ("sign elsewhere and paste", real) and a **TEST WALLET** (throwaway in-memory key, enabled only with `NEXT_PUBLIC_ENABLE_TEST_WALLET=1`, loudly labeled, its transactions are not submittable on a real network). **No browser-wallet (Freighter etc.) adapter yet** |
+| Circles list/create, circle page: coverage, rights, funding, transfer proposal, claim | implemented |
+| Recipient approval screen, invitations (create + accept), claim history, audit trail view | implemented |
 | Honest states: loading, empty, retryable outage, refusal, expired, SUBMITTED vs CONFIRMED, reconciling | implemented |
-| Recipient approval screen, invitations, audit view, claim history | **not built** |
-| Wallet connection (signing happens outside the app; signed XDR is pasted) | **not built** |
-| End-to-end against real torrent-api / indexer / Testnet | **never run** (no deployment exists). Tests use stubbed API clients |
-| Authentication | API dev-token adapter only |
+| Tests | 59 (view models, components, page flows, wallet adapters, API client) |
+| Cross-repo contract | the 21 **real recorded torrent-api responses** (`fixtures/api-examples.v1.json`) parse with the web schemas; endpoints/fields checked against the mirrored OpenAPI |
+| End-to-end against real torrent-api / indexer / Testnet / a real wallet | **never run** (no deployment exists) |
+| Playwright / device E2E | **not built** |
 
 The app never asks for or stores a secret key. See `docs/adr/0001-web-design.md`.
 
@@ -27,7 +29,7 @@ npm run build      # next build (passes)
 cp .env.example .env.local   # NEXT_PUBLIC_API_BASE_URL -> a running torrent-api
 npm run dev        # http://localhost:3000
 ```
-Stop with Ctrl-C. Needs `torrent-api` (which needs `torrent-indexer`, which needs a deployed `torrent-contracts`). Consumes torrent-api OpenAPI v1 (`fixtures/api-openapi.v1.json`, mirrored from torrent-api@3044b0d era).
+Stop with Ctrl-C. Needs `torrent-api` (which needs `torrent-indexer`, which needs a deployed `torrent-contracts`). Consumes torrent-api OpenAPI v1 and recorded examples (`fixtures/`, mirrored from torrent-api@8be0d3f).
 
 ## Owns
 Savings-circle dashboard, governance and identity UX, fully-funded payout inventory, swap/transfer requests, signing and reporting

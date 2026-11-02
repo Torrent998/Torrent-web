@@ -11,7 +11,9 @@ Status: accepted (M3 slice, started early because M1/M2 of the siblings exist). 
 6. **Idempotency**: intent-creating calls send an `Idempotency-Key`; callers can supply the key to retry safely.
 7. Design is intentionally plain (brand colors, flat mark, dark/light, reduced motion, 44px targets, labelled forms); visual polish is deferred per `docs/BRAND.md`.
 
+## Update (wallet + remaining screens)
+Sign-in is a wallet-signature challenge; signing goes through a `WalletAdapter` (manual paste, or a labeled throwaway TEST wallet for development). Recipient approval, invitations, claim history and the audit view now exist.
+
 ## Not done
-- Recipient-side transfer approval screens (`POST /v1/transfers/{id}/approve` is in the API client contract list but has no UI yet), invitations UI, audit view, claim history.
-- Wallet connection; Playwright/device E2E; real-network E2E (no Testnet deployment exists).
-- Authentication is the API's dev token adapter; no real login.
+- A real browser-wallet adapter; Playwright/device E2E; real-network E2E (no Testnet deployment exists).
+- Session survives reload (token in sessionStorage) but the wallet must be reconnected to sign.
