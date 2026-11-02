@@ -62,3 +62,25 @@ export const rights = z.object({
   rights: z.array(right),
 });
 export type RightsResponse = z.infer<typeof rights>;
+
+export const challenge = z.object({ challengeId: z.string(), message: z.string(), expiresAt: z.string() });
+export const login = z.object({ token: z.string(), expiresAt: z.string(), userId: z.string(), address: z.string(), roles: z.array(z.enum(["user", "auditor"])) });
+export const ok = z.object({ ok: z.literal(true) });
+export const invitationCreated = z.object({
+  invitation: z.object({ id: z.string(), label: z.string(), status: z.string(), expiresAt: z.string() }),
+  token: z.string(),
+});
+export const TRANSFER_STATUSES = ["PROPOSING", "AWAITING_RECIPIENT", "ACCEPTING", "COMPLETED", "FAILED"] as const;
+export const transferRecord = transferWithIntent.shape.transfer.extend({ status: z.enum(TRANSFER_STATUSES) });
+export type TransferRecord = z.infer<typeof transferRecord>;
+export const transferList = z.object({ transfers: z.array(transferRecord) });
+export const intentList = z.object({ intents: z.array(intent) });
+export const auditPage = z.object({
+  nextCursor: z.string().nullable(),
+  events: z.array(z.object({ id: z.string(), at: z.string(), actor: z.string(), scope: z.string(), action: z.string(), object: z.string(), requestId: z.string() })),
+});
+export type AuditEntry = z.infer<typeof auditPage>["events"][number];
+export const ledgerEvents = z.object({
+  schemaVersion: z.literal(1), network: z.string(), nextCursor: z.string().nullable(), indexerStatus: z.string(),
+  events: z.array(z.object({ id: z.string(), ledger: z.number(), name: z.string(), txHash: z.string(), finality: z.enum(["SUBMITTED", "CONFIRMED"]) }).passthrough()),
+});

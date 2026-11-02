@@ -36,3 +36,26 @@ describe("consumer contract with torrent-api (mirrored OpenAPI 3.1)", () => {
     expect(z.object({}).safeParse({}).success).toBe(true);
   });
 });
+
+
+describe("consumer contract: REAL recorded torrent-api responses parse with the web schemas", () => {
+  const ex = JSON.parse(readFileSync(join(process.cwd(), "fixtures/api-examples.v1.json"), "utf8")) as { examples: Record<string, unknown> };
+  const map: Record<string, z.ZodType> = {
+    authChallenge: S.challenge, authLogin: S.login, authLogout: S.ok, createCircle: S.circle, listCircles: S.circleList, getCircle: S.circle,
+    createInvitation: S.invitationCreated, acceptInvitation: S.circle, createFundingIntent: S.intent, getIntent: S.intent,
+    submitIntent: S.intentEnvelope, getCoverage: S.coverage, listRights: S.rights, createTransferIntent: S.transferWithIntent,
+    submitTransfer: S.intentEnvelope, approveTransfer: S.transferWithIntent, createClaimIntent: S.intentEnvelope,
+    listTransfers: S.transferList, listIntents: S.intentList, circleAudit: S.auditPage, ledgerEvents: S.ledgerEvents,
+  };
+  it("covers every recorded example and each one parses", () => {
+    expect(Object.keys(ex.examples).sort()).toEqual(Object.keys(map).sort());
+    for (const [id, schema] of Object.entries(map)) expect(() => schema.parse(ex.examples[id]), id).not.toThrow();
+  });
+  it("the recorded workflow shows the honest states the UI depends on", () => {
+    const e = ex.examples as { createFundingIntent: { state: string }; submitIntent: { intent: { state: string } }; listTransfers: { transfers: { status: string }[] }; approveTransfer: { intent: { kind: string } } };
+    expect(e.createFundingIntent.state).toBe("AWAITING_SIGNATURE");
+    expect(e.submitIntent.intent.state).toBe("SUBMITTED");
+    expect(e.listTransfers.transfers[0]?.status).toBe("ACCEPTING");
+    expect(e.approveTransfer.intent.kind).toBe("TRANSFER_ACCEPT");
+  });
+});
