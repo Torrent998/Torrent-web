@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { CoveragePanel } from "@/components/coverage-panel";
 import { IntentPanel } from "@/components/intent-panel";
 import { RightsTable } from "@/components/rights-table";
+import { AskProvider } from "@/components/ask-dialog";
 import { SessionGate } from "@/components/session-gate";
+import { WalletError, type WalletAdapter } from "@/lib/wallet/types";
 import { ApiClient, ApiError } from "@/lib/api/client";
 import type { Intent, Right } from "@/lib/api/schemas";
 import { SessionProvider } from "@/lib/session";
@@ -19,50 +21,78 @@ const fakeClient = (over: Partial<Record<"submitIntent" | "getIntent", unknown>>
   ({ submitIntent: vi.fn(), getIntent: vi.fn(), ...over }) as unknown as ApiClient;
 const LONG = "A".repeat(120);
 
+const PASS = "Test SDF Network ; September 2015";
+const fakeWallet = (over: Partial<WalletAdapter> = {}): WalletAdapter => ({
+  id: "fake", label: "Fake Wallet", isTestAdapter: false,
+  connect: vi.fn(), signMessage: vi.fn(), signIntent: vi.fn().mockResolvedValue(LONG), ...over,
+});
+const panel = (over: Partial<Parameters<typeof IntentPanel>[0]> = {}) => (
+  <IntentPanel intent={base} client={fakeClient()} wallet={fakeWallet()} networkPassphrase={PASS} now={now} pollMs={1e9} {...over} />
+);
+
 describe("IntentPanel", () => {
   it("shows what will be signed and that nothing happened on-chain yet", () => {
-    render(<IntentPanel intent={base} client={fakeClient()} now={now} />);
+    render(panel());
     expect(screen.getByText("Needs your signature")).toBeInTheDocument();
     expect(screen.getByText(/nothing has happened on-chain/i)).toBeInTheDocument();
     expect(screen.getByText(/deposit\(amount = 1\.5 \(15000000 base units\)\)/)).toBeInTheDocument();
     expect(screen.getByText(/15m 0s/)).toBeInTheDocument();
   });
 
-  it("submits the pasted XDR and then shows SUBMITTED as not yet confirmed (not as success)", async () => {
+  it("asks the wallet to sign the intent, submits the result, and shows SUBMITTED as not yet confirmed", async () => {
     const submitted: Intent = { ...base, state: "SUBMITTED", txHash: "ab".repeat(32) };
     const client = fakeClient({ submitIntent: vi.fn().mockResolvedValue({ intent: submitted }) });
-    render(<IntentPanel intent={base} client={client} now={now} pollMs={1e9} />);
-    const btn = screen.getByRole("button", { name: /submit signed transaction/i });
-    expect(btn).toBeDisabled();
-    await userEvent.type(screen.getByLabelText(/signed transaction/i), LONG);
-    await userEvent.click(btn);
+    const wallet = fakeWallet();
+    render(panel({ client, wallet }));
+    await userEvent.click(screen.getByRole("button", { name: /sign and submit with fake wallet/i }));
+    expect(wallet.signIntent).toHaveBeenCalledWith(expect.objectContaining({ id: "int_1" }), PASS);
     expect(client.submitIntent).toHaveBeenCalledWith("int_1", LONG);
     expect(await screen.findByText("Submitted, not yet confirmed")).toBeInTheDocument();
     expect(screen.queryByText(/confirmed on-chain/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Transaction: abab/)).toBeInTheDocument();
   });
 
-  it("surfaces a server refusal (tampered/mismatched tx) and keeps the form usable", async () => {
+  it("a cancelled or failed wallet signature shows an error and nothing is submitted", async () => {
+    const client = fakeClient();
+    const wallet = fakeWallet({ signIntent: vi.fn().mockRejectedValue(new WalletError("CANCELLED", "Signing cancelled.")) });
+    render(panel({ client, wallet }));
+    await userEvent.click(screen.getByRole("button", { name: /sign and submit/i }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Signing cancelled.");
+    expect(client.submitIntent).not.toHaveBeenCalled();
+  });
+
+  it("surfaces a server refusal (tampered/mismatched tx) and keeps the button usable", async () => {
     const client = fakeClient({ submitIntent: vi.fn().mockRejectedValue(new ApiError(422, "TX_MISMATCH", "argument amount differs from the approved intent", "req_9")) });
-    render(<IntentPanel intent={base} client={client} now={now} pollMs={1e9} />);
-    await userEvent.type(screen.getByLabelText(/signed transaction/i), LONG);
-    await userEvent.click(screen.getByRole("button", { name: /submit signed/i }));
+    render(panel({ client }));
+    await userEvent.click(screen.getByRole("button", { name: /sign and submit/i }));
     expect(await screen.findByRole("alert")).toHaveTextContent("differs from the approved intent");
     expect(screen.getByRole("alert")).toHaveTextContent("req_9");
-    expect(screen.getByLabelText(/signed transaction/i)).toBeEnabled();
+    expect(screen.getByRole("button", { name: /sign and submit/i })).toBeEnabled();
+  });
+
+  it("labels test wallets loudly", () => {
+    render(panel({ wallet: fakeWallet({ isTestAdapter: true, label: "TEST WALLET (x)" }) }));
+    expect(screen.getByText("TEST WALLET")).toBeInTheDocument();
+    expect(screen.getByText(/not submittable on a real network/i)).toBeInTheDocument();
+  });
+
+  it("without a wallet it asks to reconnect instead of offering to sign", () => {
+    render(panel({ wallet: null, reconnect: <p>RECONNECT-SLOT</p> }));
+    expect(screen.getByText("RECONNECT-SLOT")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /sign and submit/i })).not.toBeInTheDocument();
   });
 
   it("an expired request cannot be signed", () => {
-    render(<IntentPanel intent={{ ...base, expiresAt: "2026-03-01T00:00:00.000Z" }} client={fakeClient()} now={now} />);
+    render(panel({ intent: { ...base, expiresAt: "2026-03-01T00:00:00.000Z" } }));
     expect(screen.getByRole("alert")).toHaveTextContent(/expired/i);
-    expect(screen.queryByRole("button", { name: /submit signed/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /sign and submit/i })).not.toBeInTheDocument();
   });
 
   it("polls a submitted intent until the indexer confirms it, tolerating a failed poll", async () => {
     vi.useFakeTimers();
     try {
       const getIntent = vi.fn().mockRejectedValueOnce(new ApiError(503, "INDEXER_STALE", "stale")).mockResolvedValue({ ...base, state: "CONFIRMED", txHash: "cd".repeat(32) });
-      render(<IntentPanel intent={{ ...base, state: "SUBMITTED", txHash: "cd".repeat(32) }} client={fakeClient({ getIntent })} now={now} pollMs={1000} />);
+      render(panel({ intent: { ...base, state: "SUBMITTED", txHash: "cd".repeat(32) }, client: fakeClient({ getIntent }), pollMs: 1000 }));
       await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
       expect(screen.getByText("Submitted, not yet confirmed")).toBeInTheDocument();
       await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
@@ -71,7 +101,7 @@ describe("IntentPanel", () => {
   });
 
   it("FAILED says nothing changed on-chain and shows the reason", () => {
-    render(<IntentPanel intent={{ ...base, state: "FAILED", failureReason: "EXPIRED_BEFORE_SIGNATURE" }} client={fakeClient()} now={now} />);
+    render(panel({ intent: { ...base, state: "FAILED", failureReason: "EXPIRED_BEFORE_SIGNATURE" } }));
     expect(screen.getByText(/no change was made on-chain/i)).toBeInTheDocument();
     expect(screen.getByText("EXPIRED_BEFORE_SIGNATURE")).toBeInTheDocument();
   });
@@ -113,21 +143,55 @@ describe("RightsTable", () => {
   });
 });
 
-describe("SessionGate", () => {
-  const client = {} as ApiClient;
-  it("blocks until a valid PUBLIC address and token are given, never accepts a secret key", async () => {
+describe("SessionGate (wallet sign-in)", () => {
+  function renderGate(client: ApiClient) {
     window.sessionStorage.clear();
-    render(<SessionProvider client={client}><SessionGate><p>inside</p></SessionGate></SessionProvider>);
-    expect(screen.queryByText("inside")).not.toBeInTheDocument();
-    await userEvent.type(screen.getByLabelText(/api token/i), "tok-0123456789abcdef");
-    await userEvent.type(screen.getByLabelText(/public stellar address/i), "S" + "A".repeat(55)); // looks like a secret seed
+    return render(<SessionProvider client={client}><AskProvider><SessionGate><p>inside</p></SessionGate></AskProvider></SessionProvider>);
+  }
+  it("does not accept a secret key as an address", async () => {
+    renderGate({} as ApiClient);
+    await userEvent.type(screen.getByLabelText(/public stellar address/i), "S" + "A".repeat(55));
     expect(screen.getByRole("alert")).toHaveTextContent(/not a valid public address/);
-    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
-    await userEvent.clear(screen.getByLabelText(/public stellar address/i));
-    await userEvent.type(screen.getByLabelText(/public stellar address/i), "G" + "A".repeat(55));
+    expect(screen.getByRole("button", { name: /sign in by signing elsewhere/i })).toBeDisabled();
+    expect(screen.queryByText("inside")).not.toBeInTheDocument();
+  });
+  it("walks challenge -> pasted wallet signature -> session, and stores only token + public address", async () => {
+    const addr = "G" + "A".repeat(55);
+    const client = {
+      authChallenge: vi.fn().mockResolvedValue({ challengeId: "chal_1", message: "sign me", expiresAt: "x" }),
+      authLogin: vi.fn().mockResolvedValue({ token: "tok-session-0123456789", expiresAt: "x", userId: "u", address: addr, roles: ["user"] }),
+    } as unknown as ApiClient;
+    renderGate(client);
+    await userEvent.type(screen.getByLabelText(/public stellar address/i), addr);
+    await userEvent.click(screen.getByRole("button", { name: /sign in by signing elsewhere/i }));
+    const dlg = await screen.findByRole("dialog");
+    expect(dlg).toHaveTextContent("sign me");
+    expect(dlg).toHaveTextContent(/authorizes no payment/i);
+    await userEvent.type(screen.getByLabelText(/signature \(base64\)/i), "c2lnbmF0dXJl");
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
     await waitFor(() => expect(screen.getByText("inside")).toBeInTheDocument());
-    expect(window.sessionStorage.getItem("torrent.session.v1")).not.toContain("S" + "A".repeat(55));
+    expect(client.authChallenge).toHaveBeenCalledWith(addr);
+    expect(client.authLogin).toHaveBeenCalledWith("chal_1", "c2lnbmF0dXJl");
+    expect(JSON.parse(window.sessionStorage.getItem("torrent.session.v2")!)).toEqual({ token: "tok-session-0123456789", address: addr });
     expect(window.localStorage.length).toBe(0);
+  });
+  it("cancelling the signature dialog leaves you signed out with a clear message", async () => {
+    const client = { authChallenge: vi.fn().mockResolvedValue({ challengeId: "c", message: "m", expiresAt: "x" }), authLogin: vi.fn() } as unknown as ApiClient;
+    renderGate(client);
+    await userEvent.type(screen.getByLabelText(/public stellar address/i), "G" + "A".repeat(55));
+    await userEvent.click(screen.getByRole("button", { name: /sign in by signing elsewhere/i }));
+    await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/cancelled/i);
+    expect(client.authLogin).not.toHaveBeenCalled();
+    expect(screen.queryByText("inside")).not.toBeInTheDocument();
+  });
+  it("shows the API's refusal when the signature is rejected", async () => {
+    const client = { authChallenge: vi.fn().mockResolvedValue({ challengeId: "c", message: "m", expiresAt: "x" }), authLogin: vi.fn().mockRejectedValue(new ApiError(401, "UNAUTHENTICATED", "invalid or expired challenge, or signature does not verify")) } as unknown as ApiClient;
+    renderGate(client);
+    await userEvent.type(screen.getByLabelText(/public stellar address/i), "G" + "A".repeat(55));
+    await userEvent.click(screen.getByRole("button", { name: /sign in by signing elsewhere/i }));
+    await userEvent.type(await screen.findByLabelText(/signature/i), "AAAA");
+    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/does not verify/);
   });
 });

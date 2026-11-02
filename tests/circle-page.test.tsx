@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiClient } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/client";
 import type { Intent } from "@/lib/api/schemas";
+import { AskProvider } from "@/components/ask-dialog";
 import { SessionProvider } from "@/lib/session";
 
 vi.mock("next/navigation", () => ({ useParams: () => ({ id: "cir_1" }) }));
@@ -23,8 +24,8 @@ function client(over: Record<string, unknown> = {}) {
   } as unknown as ApiClient;
 }
 function renderPage(c: ApiClient) {
-  window.sessionStorage.setItem("torrent.session.v1", JSON.stringify({ token: "tok-0123456789abcdef", address: ME }));
-  return render(<SessionProvider client={c}><CirclePage /></SessionProvider>);
+  window.sessionStorage.setItem("torrent.session.v2", JSON.stringify({ token: "tok-0123456789abcdef", address: ME }));
+  return render(<SessionProvider client={c}><AskProvider><CirclePage /></AskProvider></SessionProvider>);
 }
 beforeEach(() => window.sessionStorage.clear());
 

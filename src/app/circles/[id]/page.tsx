@@ -2,7 +2,7 @@
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { CoveragePanel } from "@/components/coverage-panel";
-import { IntentPanel } from "@/components/intent-panel";
+import { SessionIntentPanel } from "@/components/intent-panel";
 import { RightsTable } from "@/components/rights-table";
 import { SessionGate } from "@/components/session-gate";
 import { Card, ErrorBox, Loading, btn, input } from "@/components/ui";
@@ -88,7 +88,7 @@ function CircleDetail({ id }: { id: string }) {
       )}
 
       {error && <ErrorBox error={error} />}
-      {intent && <IntentPanel key={intent.id} intent={intent} client={client} onChange={(i) => { setIntent(i); if (i.state === "CONFIRMED") refresh(); }} />}
+      {intent && <SessionIntentPanel key={intent.id} intent={intent} onChange={(i) => { setIntent(i); if (i.state === "CONFIRMED") refresh(); }} />}
     </div>
   );
 }
