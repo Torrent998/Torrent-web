@@ -12,7 +12,7 @@ export default function CirclesPage() {
 }
 
 function CircleList() {
-  const { client, setCredentials } = useSession();
+  const { client, signOut } = useSession();
   const [state, reload] = useAsync(() => client.listCircles(), [client]);
   const [creating, setCreating] = useState(false);
   return (
@@ -20,7 +20,7 @@ function CircleList() {
       <div className="flex items-center gap-3">
         <h1 className="text-2xl font-bold">Your circles</h1>
         <button className={`${btnGhost} ml-auto`} onClick={() => setCreating(!creating)}>{creating ? "Close" : "New circle"}</button>
-        <button className={btnGhost} onClick={() => setCredentials(null, null)}>Sign out</button>
+        <button className={btnGhost} onClick={() => signOut()}>Sign out</button>
       </div>
       {creating && <Card title="New circle"><CreateCircleForm onCreated={() => { setCreating(false); reload(); }} /></Card>}
       {state.status === "loading" && <Loading what="circles" />}
