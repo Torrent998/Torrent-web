@@ -1,11 +1,13 @@
 "use client";
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ApiClient } from "@/lib/api/client";
 import type { WalletAdapter } from "@/lib/wallet/types";
 
 export interface Session {
   client: ApiClient;
   token: string | null;
+  /** False until the stored session has been read on the client (avoids a server/client mismatch). */
+  ready: boolean;
   address: string | null;
   /** Wallet for signing; null after a page reload until the user reconnects. */
   wallet: WalletAdapter | null;
@@ -33,9 +35,17 @@ function load(): { token: string | null; address: string | null } {
 }
 
 export function SessionProvider({ children, baseUrl, client, networkPassphrase }: { children: ReactNode; baseUrl?: string; client?: ApiClient; networkPassphrase?: string }) {
-  const [creds, setCreds] = useState(load);
+  // The server cannot see sessionStorage, so start signed out and read it after mount.
+  const [creds, setCreds] = useState<{ token: string | null; address: string | null }>({ token: null, address: null });
+  const [ready, setReady] = useState(false);
   const [wallet, setWallet] = useState<WalletAdapter | null>(null);
-  const tokenRef = useRef<string | null>(creds.token);
+  const tokenRef = useRef<string | null>(null);
+  useEffect(() => {
+    const c = load();
+    tokenRef.current = c.token;
+    setCreds(c);
+    setReady(true);
+  }, []);
   const api = useMemo(
     () => client ?? new ApiClient({ baseUrl: baseUrl ?? process.env["NEXT_PUBLIC_API_BASE_URL"] ?? "http://localhost:3001", getToken: () => tokenRef.current }),
     [client, baseUrl],
@@ -47,7 +57,7 @@ export function SessionProvider({ children, baseUrl, client, networkPassphrase }
   }, []);
 
   const value = useMemo<Session>(() => ({
-    client: api, token: creds.token, address: creds.address, wallet, networkPassphrase: networkPassphrase ?? DEFAULT_PASSPHRASE,
+    client: api, token: creds.token, ready, address: creds.address, wallet, networkPassphrase: networkPassphrase ?? DEFAULT_PASSPHRASE,
     async signIn(w) {
       const { address } = await w.connect();
       const ch = await api.authChallenge(address);
@@ -65,7 +75,7 @@ export function SessionProvider({ children, baseUrl, client, networkPassphrase }
       try { if (tokenRef.current) await api.logout(); } catch { /* session may already be gone */ }
       setWallet(null); persist(null, null);
     },
-  }), [api, creds, wallet, networkPassphrase, persist]);
+  }), [api, creds, ready, wallet, networkPassphrase, persist]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
