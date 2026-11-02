@@ -2,7 +2,11 @@
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { CoveragePanel } from "@/components/coverage-panel";
+import { AuditPanel } from "@/components/audit-panel";
+import { HistoryPanel } from "@/components/history-panel";
+import { InvitePanel } from "@/components/invite-panel";
 import { SessionIntentPanel } from "@/components/intent-panel";
+import { TransfersPanel } from "@/components/transfers-panel";
 import { RightsTable } from "@/components/rights-table";
 import { SessionGate } from "@/components/session-gate";
 import { Card, ErrorBox, Loading, btn, input } from "@/components/ui";
@@ -22,6 +26,8 @@ function CircleDetail({ id }: { id: string }) {
   const [circle] = useAsync(() => client.getCircle(id), [client, id]);
   const [cov, reloadCov] = useAsync(() => client.coverage(id), [client, id]);
   const [rights, reloadRights] = useAsync(() => client.rights(id), [client, id]);
+  const [transfers, reloadTransfers] = useAsync(() => client.listTransfers(id), [client, id]);
+  const [mine, reloadMine] = useAsync(() => client.listIntents(id), [client, id]);
   const [intent, setIntent] = useState<Intent | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -33,7 +39,8 @@ function CircleDetail({ id }: { id: string }) {
     try { await fn(); } catch (e) { setError(e instanceof ApiError ? e : new ApiError(0, "UNKNOWN", "Something went wrong.")); } finally { setBusyId(null); }
   };
   const units = parseToBaseUnits(amount);
-  const refresh = () => { reloadCov(); reloadRights(); };
+  const refresh = () => { reloadCov(); reloadRights(); reloadTransfers(); reloadMine(); };
+  const isOrganizer = circle.status === "ready" && circle.data.organizerAddress === address;
 
   return (
     <div className="grid gap-4">
@@ -69,6 +76,9 @@ function CircleDetail({ id }: { id: string }) {
         {rights.status === "ready" && rights.data.asOfLedger !== undefined && <p className="mt-2 text-sm text-muted">Ledger data as of ledger {rights.data.asOfLedger}.</p>}
       </Card>
 
+      {transfers.status === "ready" && <TransfersPanel transfers={transfers.data.transfers} myAddress={address} client={client} onIntent={setIntent} onChanged={reloadTransfers} />}
+      {transfers.status === "error" && <ErrorBox error={transfers.error} onRetry={reloadTransfers} />}
+
       {transferTo && (
         <Card title={`Transfer right #${transferTo.right.rightId}`}>
           <form className="grid gap-2" onSubmit={(e) => {
@@ -86,6 +96,10 @@ function CircleDetail({ id }: { id: string }) {
           </form>
         </Card>
       )}
+
+      {rights.status === "ready" && mine.status === "ready" && <HistoryPanel rights={rights.data.rights} intents={mine.data.intents} myAddress={address} />}
+      {isOrganizer && <InvitePanel client={client} circleId={id} />}
+      {isOrganizer && <AuditPanel client={client} circleId={id} />}
 
       {error && <ErrorBox error={error} />}
       {intent && <SessionIntentPanel key={intent.id} intent={intent} onChange={(i) => { setIntent(i); if (i.state === "CONFIRMED") refresh(); }} />}

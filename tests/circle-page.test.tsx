@@ -19,6 +19,7 @@ function client(over: Record<string, unknown> = {}) {
   return {
     getCircle: vi.fn().mockResolvedValue(circle), coverage: vi.fn().mockResolvedValue(coverage),
     rights: vi.fn().mockResolvedValue({ circleId: "cir_1", bound: true, asOfLedger: 9, rights: [{ rightId: "5", poolId: "1", amount: "1000000000", owner: ME, maturity: 1, state: "Issued", pendingTransfer: null, issuedAtLedger: 1, claimedAtLedger: null }] }),
+    listTransfers: vi.fn().mockResolvedValue({ transfers: [] }), listIntents: vi.fn().mockResolvedValue({ intents: [] }),
     fundingIntent: vi.fn().mockResolvedValue(intent), claimIntent: vi.fn().mockResolvedValue({ intent: { ...intent, kind: "CLAIM" } }),
     ...over,
   } as unknown as ApiClient;
