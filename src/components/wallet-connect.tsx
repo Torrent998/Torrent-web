@@ -6,7 +6,7 @@ import { ManualWalletAdapter } from "@/lib/wallet/manual";
 import { testWalletEnabled } from "@/lib/wallet/test-wallet";
 import { WalletError, type WalletAdapter } from "@/lib/wallet/types";
 import { useAsk } from "./ask-dialog";
-import { Badge, btn, btnGhost, input } from "./ui";
+import { Badge, btn, btnGhost, input, label } from "./ui";
 
 /**
  * Connects a wallet. There is no browser-wallet integration yet: the real options are
@@ -33,10 +33,10 @@ export function WalletConnect({ mode }: { mode: "signin" | "attach" }) {
 
   return (
     <div className="grid gap-3">
-      <label className="grid gap-1">Public Stellar address
+      <label className={label}>Public Stellar address
         <input className={`${input} num`} value={address} readOnly={mode === "attach"} onChange={(e) => setAddress(e.target.value)} aria-invalid={address !== "" && !addrOk} />
       </label>
-      {address !== "" && !addrOk && <p role="alert" className="text-red-600">That is not a valid public address (56 characters starting with G). Never enter a secret key.</p>}
+      {address !== "" && !addrOk && <p role="alert" className="text-(--bad-fg) text-sm font-medium">That is not a valid public address (56 characters starting with G). Never enter a secret key.</p>}
       <button type="button" className={btn} disabled={!addrOk || busy} onClick={() => go(async () => new ManualWalletAdapter(ask, address.trim()))}>
         {busy ? "Waiting…" : "Sign in by signing elsewhere"}
       </button>
@@ -46,7 +46,7 @@ export function WalletConnect({ mode }: { mode: "signin" | "attach" }) {
           <button type="button" className={btnGhost} disabled={busy} onClick={() => go(async () => new (await import("@/lib/wallet/test-wallet")).TestWalletAdapter())}>Use test wallet</button>
         </div>
       )}
-      {err && <p role="alert" className="text-red-600">{err}</p>}
+      {err && <p role="alert" className="text-(--bad-fg) text-sm font-medium">{err}</p>}
     </div>
   );
 }

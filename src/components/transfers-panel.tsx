@@ -37,12 +37,12 @@ export function TransfersPanel({ transfers, myAddress, client, onIntent, onChang
             const s = STATUS[t.status];
             const incoming = myAddress !== null && t.to === myAddress && t.status === "AWAITING_RECIPIENT";
             return (
-              <li key={t.id} className="rounded border border-line p-3">
-                <p>Right <span className="num">#{t.rightId}</span>: <span className="num">{t.from === myAddress ? "you" : short(t.from)}</span> → <span className="num">{t.to === myAddress ? "you" : short(t.to)}</span></p>
-                <p className="mt-1"><Badge tone={s.tone}>{s.label}</Badge></p>
-                <p className="text-sm text-muted">Offer expires {t.expiresAt}</p>
+              <li key={t.id} className="rounded-2xl border border-line bg-bg-subtle/50 p-4">
+                <p className="font-medium">Right <span className="num">#{t.rightId}</span>: <span className="num">{t.from === myAddress ? "you" : short(t.from)}</span> → <span className="num">{t.to === myAddress ? "you" : short(t.to)}</span></p>
+                <p className="mt-2"><Badge tone={s.tone}>{s.label}</Badge></p>
+                <p className="mt-2 text-xs text-muted">Offer expires <span className="num">{t.expiresAt}</span></p>
                 {incoming && (
-                  <button type="button" className={`${btn} mt-2`} disabled={busy === t.id} onClick={() => approve(t)}>
+                  <button type="button" className={`${btn} mt-3`} disabled={busy === t.id} onClick={() => approve(t)}>
                     {busy === t.id ? "Preparing…" : "Review and approve"}
                   </button>
                 )}

@@ -58,20 +58,23 @@ export function IntentPanel({ intent: initial, client, onChange, pollMs = 5000, 
   const left = secondsLeft(intent.expiresAt, now());
   const expired = intent.state === "AWAITING_SIGNATURE" && left === 0;
   return (
-    <Card title={intentTitle(intent)} tone={st.tone}>
-      <p><Badge tone={st.tone}>{st.label}</Badge></p>
-      <p className="mt-2">{st.explain}</p>
-      <p className="num mt-2 break-words text-sm text-muted">{describeDescriptor(intent)}</p>
+    <Card title={intentTitle(intent)} tone={st.tone} actions={<Badge tone={st.tone}>{st.label}</Badge>}>
+      <Progress state={intent.state} />
+      <p className="mt-4">{st.explain}</p>
+      <div className="mt-4 rounded-2xl border border-line bg-bg-subtle p-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted">Exact contract call</p>
+        <p className="num mt-1.5 break-words text-sm">{describeDescriptor(intent)}</p>
+      </div>
       {intent.state === "AWAITING_SIGNATURE" && (
-        <div className="mt-3 grid gap-2">
+        <div className="mt-4 grid gap-3">
           {expired ? (
-            <p role="alert">This request expired. Create a new one; the old approval cannot be used.</p>
+            <p role="alert" className="font-medium text-(--bad-fg)">This request expired. Create a new one; the old approval cannot be used.</p>
           ) : (
             <>
-              <p className="text-sm">Expires in <span className="num">{Math.floor(left / 60)}m {left % 60}s</span>. Your wallet will show the exact call above; check it before approving.</p>
+              <p className="text-sm">Expires in <span className="num font-medium">{Math.floor(left / 60)}m {left % 60}s</span>. Your wallet will show the exact call above; check it before approving.</p>
               {wallet ? (
                 <>
-                  {wallet.isTestAdapter && <p><Badge tone="warn">TEST WALLET</Badge> Not a real wallet; the signed transaction is not submittable on a real network.</p>}
+                  {wallet.isTestAdapter && <p className="text-sm"><Badge tone="warn">TEST WALLET</Badge> Not a real wallet; the signed transaction is not submittable on a real network.</p>}
                   <button type="button" className={btn} disabled={busy} onClick={signAndSubmit}>{busy ? "Waiting for wallet…" : `Sign and submit with ${wallet.label}`}</button>
                 </>
               ) : (
@@ -81,10 +84,40 @@ export function IntentPanel({ intent: initial, client, onChange, pollMs = 5000, 
           )}
         </div>
       )}
-      {intent.txHash && <p className="num mt-2 break-all text-sm">Transaction: {intent.txHash}</p>}
-      {intent.state === "FAILED" && intent.failureReason && <p className="mt-2 text-sm">Reason: <span className="num">{intent.failureReason}</span></p>}
-      {error && <div className="mt-3"><ErrorBox error={error} /></div>}
+      {intent.txHash && <p className="num mt-3 break-all text-xs text-muted">Transaction: {intent.txHash}</p>}
+      {intent.state === "FAILED" && intent.failureReason && <p className="mt-3 text-sm">Reason: <span className="num">{intent.failureReason}</span></p>}
+      {error && <div className="mt-4"><ErrorBox error={error} /></div>}
     </Card>
+  );
+}
+
+const STEPS = ["Sign", "Submit", "Ledger confirms"] as const;
+function stepIndex(state: Intent["state"]): number {
+  switch (state) {
+    case "CONFIRMED": return 3;
+    case "SUBMITTED": case "RECONCILING": return 2;
+    case "AWAITING_SIGNATURE": return 0;
+    default: return -1;
+  }
+}
+
+/** Where the request is in the signing lifecycle. Nothing is "done" until the ledger confirms it. */
+function Progress({ state }: { state: Intent["state"] }) {
+  const at = stepIndex(state);
+  if (at < 0) return null;
+  return (
+    <ol className="grid grid-cols-3 gap-2" aria-label="Progress">
+      {STEPS.map((label, i) => {
+        const done = i < at;
+        const current = i === at;
+        return (
+          <li key={label} aria-current={current ? "step" : undefined} className="grid gap-1.5">
+            <span aria-hidden className={`h-1.5 rounded-full ${done ? "bg-brand" : current ? "bg-brand/40" : "bg-bg-subtle"}`} />
+            <span className={`text-xs ${done || current ? "font-semibold" : "text-muted"}`}>{label}{done ? " ✓" : ""}</span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
