@@ -1,0 +1,40 @@
+import { Account, Address, Contract, Keypair, TransactionBuilder, nativeToScVal, type xdr } from "@stellar/stellar-sdk";
+import type { Intent } from "@/lib/api/schemas";
+import type { WalletAdapter } from "./types";
+
+type Arg = Intent["descriptor"]["args"][number];
+const toScVal = (a: Arg): xdr.ScVal => {
+  switch (a.type) {
+    case "u64": return nativeToScVal(BigInt(a.value), { type: "u64" });
+    case "i128": return nativeToScVal(BigInt(a.value), { type: "i128" });
+    case "address": return new Address(a.value).toScVal();
+    case "bytes32": return nativeToScVal(Buffer.from(a.value, "hex"), { type: "bytes" });
+  }
+};
+
+/**
+ * TEST ADAPTER - NOT A WALLET. Holds a throwaway random Testnet keypair in memory (never persisted)
+ * and signs for it. The transactions are well-formed and correctly signed, so the API's
+ * verification accepts them, but they use a placeholder sequence number and no fee preparation:
+ * they are NOT submittable on a real network. Only enabled with NEXT_PUBLIC_ENABLE_TEST_WALLET=1.
+ */
+export class TestWalletAdapter implements WalletAdapter {
+  readonly id = "test";
+  readonly label = "TEST WALLET (throwaway key, not a real wallet)";
+  readonly isTestAdapter = true;
+  private readonly kp: Keypair;
+  constructor(kp?: Keypair) { this.kp = kp ?? Keypair.random(); }
+
+  async connect() { return { address: this.kp.publicKey() }; }
+  async signMessage(message: string) { return Buffer.from(this.kp.signMessage(message)).toString("base64"); }
+  async signIntent(intent: Intent, networkPassphrase: string) {
+    const d = intent.descriptor;
+    const tx = new TransactionBuilder(new Account(this.kp.publicKey(), "1"), { fee: "100", networkPassphrase })
+      .addOperation(new Contract(d.contractId).call(d.function, ...d.args.map(toScVal)))
+      .setTimeout(300).build();
+    tx.sign(this.kp);
+    return tx.toXDR();
+  }
+}
+
+export const testWalletEnabled = (): boolean => process.env["NEXT_PUBLIC_ENABLE_TEST_WALLET"] === "1";
