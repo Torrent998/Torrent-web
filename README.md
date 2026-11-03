@@ -1,68 +1,155 @@
-<img src="./brand/icon.svg" alt="Torrent logo" width="144" />
+<div align="center">
 
-# torrent-web
+<img src="./brand/icon.svg" alt="Torrent logo" width="96" height="96" />
 
-> Torrent — Ownership of when money becomes available.
+# Torrent-web
 
-**Status: early vertical slice (dashboard, coverage, rights, funding / transfer-proposal / claim signing requests). Builds and passes tests; NOT connected to a live Testnet; no wallet integration; NOT production.** This repo is one of **exactly four meaningful independent codebases** in the Torrent Stellar-native project. It is not a placeholder created merely to increase Drips Wave submissions.
+**The Torrent web app: circle dashboard, ledger-derived coverage, payout rights and signing requests.**
 
-## Honest status
-| Item | State |
+[![CI](https://github.com/Torrent998/Torrent-web/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Torrent998/Torrent-web/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-42DEB4.svg)](./LICENSE)
+[![Network: Stellar Testnet](https://img.shields.io/badge/network-Stellar%20Testnet-00191C.svg)](#status)
+[![Status: prototype, unaudited](https://img.shields.io/badge/status-prototype%2C%20unaudited-A5F9DE.svg)](#status)
+
+Part of **Torrent** — ownership of *when* money becomes available.
+
+</div>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/screenshots/landing-hero-1440-dark.png" />
+  <img src="./docs/screenshots/landing-hero-1440-light.png" alt="Torrent landing page: 'Payout rights that are funded before they exist', with an illustration of a funded escrow pool and its payout rights" />
+</picture>
+
+## This repository
+
+The landing page and the web app in one Next.js codebase:
+
+- **Landing page** (`/`): value proposition, how it works, features, trust and safety, architecture and FAQ.
+  The hero illustration is animated, clearly labelled as synthetic, and static under `prefers-reduced-motion`.
+- **App** (`/circles`, `/circles/[id]`, `/invitations`): wallet-signature sign-in, circles, ledger-derived escrow
+  coverage, payout rights, transfer proposals and recipient approval, claims, invitations, claim history and the
+  organizer audit trail.
+- **Signing panel**: every request shows the exact contract call, an expiry, and an honest lifecycle
+  (`Sign -> Submit -> Ledger confirms`). Nothing is shown as settled until the indexer observes it on the ledger.
+
+Dark and light themes, responsive down to 360 px, keyboard and screen-reader friendly. The app never asks for,
+receives or stores a secret key.
+
+| Circle (desktop) | Circle (phone, dark) |
 |---|---|
-| Wallet-signature sign-in (challenge -> sign -> session), `WalletAdapter` interface | implemented |
-| Adapters | **Manual** ("sign elsewhere and paste", real) and a **TEST WALLET** (throwaway in-memory key, enabled only with `NEXT_PUBLIC_ENABLE_TEST_WALLET=1`, loudly labeled, its transactions are not submittable on a real network). **No browser-wallet (Freighter etc.) adapter yet** |
-| Circles list/create, circle page: coverage, rights, funding, transfer proposal, claim | implemented |
-| Recipient approval screen, invitations (create + accept), claim history, audit trail view | implemented |
-| Honest states: loading, empty, retryable outage, refusal, expired, SUBMITTED vs CONFIRMED, reconciling | implemented |
-| Tests | 59 (view models, components, page flows, wallet adapters, API client) |
-| Cross-repo contract | the 21 **real recorded torrent-api responses** (`fixtures/api-examples.v1.json`) parse with the web schemas; endpoints/fields checked against the mirrored OpenAPI |
-| End-to-end against real torrent-api / indexer / Testnet / a real wallet | **never run** (no deployment exists) |
-| Playwright / device E2E | **not built** |
+| <img src="./docs/screenshots/app-circle-1440-light.png" alt="Circle page with escrow coverage, payout rights, transfers and a signing request" width="560" /> | <img src="./docs/screenshots/app-circle-390-dark.png" alt="Circle page on a phone in dark mode" width="220" /> |
 
-The app never asks for or stores a secret key. See `docs/adr/0001-web-design.md`.
+All screenshots are in [docs/screenshots/](./docs/screenshots/) (1440 px and 390 px, light and dark). They were taken
+from a production build with Playwright. App screens are rendered from the **real recorded torrent-api responses** in
+[`fixtures/api-examples.v1.json`](./fixtures/api-examples.v1.json) served by a local route mock; only the signing
+request's expiry was moved forward so its live state is visible. No live network or chain was involved.
 
-## Local startup
+## Quickstart
+
+Requires Node.js 22.12 or newer.
+
 ```bash
+git clone https://github.com/Torrent998/Torrent-web && cd Torrent-web
 npm ci
-npm run check      # typecheck + eslint + vitest
-npm run build      # next build (passes)
-cp .env.example .env.local   # NEXT_PUBLIC_API_BASE_URL -> a running torrent-api
-npm run dev        # http://localhost:3000
+npm run check                 # typecheck + eslint + vitest
+npm run build                 # production build
+cp .env.example .env.local    # NEXT_PUBLIC_API_BASE_URL -> a running torrent-api
+npm run dev                   # http://localhost:3000
 ```
-Stop with Ctrl-C. Needs `torrent-api` (which needs `torrent-indexer`, which needs a deployed `torrent-contracts`). Consumes torrent-api OpenAPI v1 and recorded examples (`fixtures/`, mirrored from torrent-api@8be0d3f).
 
-## Owns
-Savings-circle dashboard, governance and identity UX, fully-funded payout inventory, swap/transfer requests, signing and reporting
+The landing page works on its own. The app needs a running [Torrent-api](https://github.com/Torrent998/Torrent-api)
+(which needs [Torrent-indexer](https://github.com/Torrent998/Torrent-indexer) and a deployed
+[Torrent-contracts](https://github.com/Torrent998/Torrent-contracts)). Stop with Ctrl-C.
 
-## Why it is separate
-It has a distinct runtime/toolchain, external interface, tests, release cadence and maintainership boundary. Its siblings depend on its delivered interface, but implementation responsibilities must not be duplicated.
+## Status
 
-## Sibling repositories
-- `torrent-api` — Authenticated groups, enrollment, policy state, off-chain agreements, transaction intent orchestration, RBAC, compliance and notifications
-- `torrent-contracts` — Escrow of backed assets, immutable fully-funded payout rights, transfer restrictions, schedule enforcement, claims, authorized amendments
-- `torrent-indexer` — Soroban event ingestion, canonical ledger-derived read models, reconciliation, replay/backfill, settlement status and event API
+| Area | State |
+|---|---|
+| Landing page (hero, how it works, features, safety, architecture, FAQ) | implemented, tested |
+| Wallet-signature sign-in (challenge -> sign -> session), `WalletAdapter` interface | implemented |
+| Wallet adapters | **Manual** ("sign elsewhere and paste") and a development-only **TEST WALLET** (`NEXT_PUBLIC_ENABLE_TEST_WALLET=1`, loudly labelled, not submittable on a real network). **No browser-wallet adapter yet** |
+| Circles, coverage, rights, funding, transfer proposal and approval, claims, invitations, history, audit trail | implemented |
+| Honest states: loading, empty, retryable outage, refusal, expired, submitted vs confirmed, reconciling | implemented |
+| Tests | 74 (view models, components, page flows, landing sections, wallet adapters, API client) |
+| Cross-repo contract | the 21 real recorded torrent-api responses parse with the web schemas; endpoints checked against the mirrored OpenAPI |
+| End-to-end against a live API, indexer, Testnet and a real wallet | **never run** (no deployment exists) |
+| Security audit / Mainnet | **no** / **no** |
 
-## Architecture and development context
-Start with:
-- `AGENTS.md` — coding agent rules;
-- `docs/PRD.md` — product purpose and MVP;
-- `docs/SRD.md` — user/system requirements, APIs and state;
-- `docs/ARCHITECTURE.md` — four-repository responsibilities, data and execution paths;
-- `docs/TECHNICAL_BUILD.md` — recommended bootstrap, testing, phases;
-- `docs/SECURITY.md` — security/trust boundaries;
-- `docs/BRAND.md` — approved flat logo and flexible UI direction;
-- `docs/ROADMAP.md` — milestone acceptance gates.
+Design record: [docs/adr/0001-web-design.md](./docs/adr/0001-web-design.md).
 
-## Technical target
-Next.js web. The actual product implementation starts at milestone M0; no real-money transactions or claims exist in this scaffold.
+## What is Torrent?
 
-## Minimal integration contract
-Always test the dependency path stated in ARCHITECTURE.md. Every new public endpoint/ABI/package message must be versioned and covered by consumer fixtures. See `docs/SRD.md` and `docs/TECHNICAL_BUILD.md`.
+In a savings circle, members contribute to a shared pot and take turns receiving it. Sometimes a member
+needs their payout earlier, or would happily take it later. **Torrent lets members exchange the timing of a
+payout, but only for payouts that are already fully funded.**
 
-## Drips Wave
-Stellar is essential: Soroban escrow contract takes custody of already-funded supported Stellar assets. Approval/eligibility for Wave depends on substantive open-source implementation and organizer review, not repo count.
+1. **Create a circle.** An organizer sets the rules; their hash binds the circle to an on-chain pool.
+2. **Fund the pool.** Members deposit a supported Stellar asset into a Soroban escrow contract.
+3. **Issue payout rights.** Each right has a unique id, owner, amount and maturity. The contract refuses to
+   issue a right that is not covered by unreserved escrow.
+4. **Transfer or claim.** The owner proposes, the recipient accepts, both sign. At maturity the current owner
+   claims exactly once.
 
+The contract enforces one invariant after every call: `reserved <= funded - claimed - withdrawn`.
+A payout right never represents a future contribution that has not been paid.
 
-## Official project identity
+## Architecture
 
-The project uses the **approved flat SVG logo** in [`brand/icon.svg`](./brand/icon.svg), with an editable transparent vector mark in [`brand/mark.svg`](./brand/mark.svg). The [512 px GitHub organization avatar](./brand/org-avatar.png) is in the same directory. This logo is shared by all four project repositories. UI design remains intentionally flexible.
+Torrent is four independently tested repositories, each owning one boundary. The contract is the only source of truth for backing, ownership and payout; the indexer reconstructs that truth from the ledger; the API organizes people and signing requests; the web app shows it honestly.
+
+```mermaid
+flowchart LR
+  U(["Member wallet"]) -.->|signs each call| W
+  W["<b>Torrent-web</b><br/>Next.js app"] -->|HTTPS, OpenAPI v1| A["<b>Torrent-api</b><br/>circles, invitations, signing requests"]
+  A -->|ledger read models| I["<b>Torrent-indexer</b><br/>ledger-derived state"]
+  A -->|user-signed transactions| C["<b>Torrent-contracts</b><br/>Soroban escrow on Stellar"]
+  C -->|contract events via RPC| I
+  classDef here fill:#42DEB4,stroke:#00191C,color:#00191C
+  class W here
+```
+
+| Repository | Stack | Owns |
+|---|---|---|
+| [Torrent-contracts](https://github.com/Torrent998/Torrent-contracts) | Rust · Soroban SDK 29 | Escrow pools, fully backed payout rights, member-only transfers and one-time claims. The only writer of financial truth. |
+| [Torrent-indexer](https://github.com/Torrent998/Torrent-indexer) | TypeScript · Node 22 · Stellar RPC | Ingests contract events with a durable cursor and rebuilds pools, rights and transfers from the ledger. |
+| [Torrent-api](https://github.com/Torrent998/Torrent-api) | TypeScript · NestJS · SQLite | Circles, invitations, wallet sign-in and the signing-request state machine. Holds no keys and no balances. |
+| **[Torrent-web](https://github.com/Torrent998/Torrent-web)** (this repo) | TypeScript · Next.js 16 · Tailwind CSS 4 | Landing page and web app: circles, coverage, rights, transfers, claims and signing requests. |
+
+## Project documents
+
+| Document | What it covers |
+|---|---|
+| [docs/PRD.md](./docs/PRD.md) | Product purpose, users, MVP and non-goals |
+| [docs/SRD.md](./docs/SRD.md) | Domain model, state machine, API surface |
+| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | The four repositories and how data flows between them |
+| [docs/STELLAR_PROTOCOL.md](./docs/STELLAR_PROTOCOL.md) | Contract specification and invariants |
+| [docs/SECURITY.md](./docs/SECURITY.md) | Threat model and go-live restrictions |
+| [docs/ROADMAP.md](./docs/ROADMAP.md) | Milestones and quality gates |
+| [docs/BRAND.md](./docs/BRAND.md) | Approved logo and interface principles |
+| [docs/adr/](./docs/adr/) | Architecture decision records for this repository |
+| [AGENTS.md](./AGENTS.md) | Rules for AI coding agents working in this repository |
+
+The shared product documents are mirrored in all four repositories; the canonical copy lives in
+[Torrent-api](https://github.com/Torrent998/Torrent-api/tree/main/docs).
+
+## Contributing and Drips Wave
+
+Contributions are welcome. Start with [CONTRIBUTING.md](./CONTRIBUTING.md), then pick a scoped task from
+[docs/CONTRIBUTOR_ISSUES.md](./docs/CONTRIBUTOR_ISSUES.md). Each task names its motivation, the files it touches,
+acceptance tests and non-goals. Changes that cross a repository boundary go through the versioned fixtures
+each repo publishes, so every PR stays reviewable on its own.
+
+Torrent intends to apply to the [Drips Wave](https://docs.drips.network/wave/maintainers/participating-in-a-wave/)
+program for Stellar projects. Participation is subject to Drips' review; nothing here implies approval or rewards.
+Please follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
+
+## Security
+
+Torrent is an **unaudited prototype for Stellar Testnet**. Do not use it with real funds.
+Please report vulnerabilities privately as described in [SECURITY.md](./SECURITY.md); do not open public issues
+for them. The threat model is in [docs/SECURITY.md](./docs/SECURITY.md).
+
+## License
+
+[MIT](./LICENSE). The Torrent logo in [`brand/`](./brand/) is the project's approved identity and is shared by all four
+repositories; see [brand/README.md](./brand/README.md) for usage rules.
