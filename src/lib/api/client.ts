@@ -79,6 +79,13 @@ export class ApiClient {
   approveTransfer(transferId: string, key?: string) {
     return this.call("POST", `/v1/transfers/${enc(transferId)}/approve`, S.transferWithIntent, { idempotent: true, ...(key ? { key } : {}) });
   }
+  cancelTransfer(transferId: string, key?: string) {
+    return this.call("POST", `/v1/transfers/${enc(transferId)}/cancel`, S.transferWithIntent, { idempotent: true, ...(key ? { key } : {}) });
+  }
+  leaveIntent(circleId: string, key?: string) {
+    return this.call("POST", `/v1/circles/${enc(circleId)}/leave-intent`, S.intentEnvelope, { body: {}, idempotent: true, ...(key ? { key } : {}) });
+  }
+  contract() { return this.call("GET", "/v1/contract", S.contractInfo); }
   claimIntent(rightId: string, key?: string) {
     return this.call("POST", `/v1/rights/${enc(rightId)}/claim-intent`, S.intentEnvelope, { body: {}, idempotent: true, ...(key ? { key } : {}) });
   }

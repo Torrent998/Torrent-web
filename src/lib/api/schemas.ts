@@ -21,7 +21,7 @@ export const INTENT_STATES = ["DRAFT", "VERIFIED", "AWAITING_SIGNATURE", "SUBMIT
 export type IntentState = (typeof INTENT_STATES)[number];
 export const intent = z.object({
   id: z.string(), schemaVersion: z.literal(1), requestId: z.string(),
-  kind: z.enum(["FUNDING", "TRANSFER_PROPOSE", "TRANSFER_ACCEPT", "CLAIM"]), circleId: z.string(),
+  kind: z.enum(["FUNDING", "TRANSFER_PROPOSE", "TRANSFER_ACCEPT", "TRANSFER_CANCEL", "CLAIM", "POOL_LEAVE"]), circleId: z.string(),
   state: z.enum(INTENT_STATES),
   descriptor: z.object({
     contractId: z.string(), function: z.string(),
@@ -35,7 +35,7 @@ export const intentEnvelope = z.object({ intent });
 export const transferWithIntent = z.object({
   transfer: z.object({
     id: z.string(), circleId: z.string(), rightId: z.string(), from: z.string(), to: z.string(), expiresAt: z.string(),
-    proposeIntentId: z.string(), acceptIntentId: z.string().nullable(), chainTransferId: z.string().nullable(), createdAt: z.string(),
+    proposeIntentId: z.string(), acceptIntentId: z.string().nullable(), cancelIntentId: z.string().nullable(), chainTransferId: z.string().nullable(), createdAt: z.string(),
   }),
   intent,
 });
@@ -45,7 +45,7 @@ export const coverage = z.union([
   z.object({
     circleId: z.string(), bound: z.literal(true), poolId: z.string(),
     totals: z.object({ funded: z.string(), reserved: z.string(), claimed: z.string(), withdrawn: z.string() }),
-    unreserved: z.string(), fullyBacked: z.boolean(), poolStatus: z.enum(["Active", "Paused"]),
+    unreserved: z.string(), fullyBacked: z.boolean(), poolStatus: z.enum(["Active", "Paused", "Closed"]),
     indexerStatus: z.enum(["SYNCING", "SYNCED", "RECONCILING"]), asOfLedger: z.number(), lagLedgers: z.number(), observedAt: z.string(),
   }),
 ]);
@@ -70,7 +70,7 @@ export const invitationCreated = z.object({
   invitation: z.object({ id: z.string(), label: z.string(), status: z.string(), expiresAt: z.string() }),
   token: z.string(),
 });
-export const TRANSFER_STATUSES = ["PROPOSING", "AWAITING_RECIPIENT", "ACCEPTING", "COMPLETED", "FAILED"] as const;
+export const TRANSFER_STATUSES = ["PROPOSING", "AWAITING_RECIPIENT", "ACCEPTING", "COMPLETED", "CANCELLING", "CANCELLED", "FAILED"] as const;
 export const transferRecord = transferWithIntent.shape.transfer.extend({ status: z.enum(TRANSFER_STATUSES) });
 export type TransferRecord = z.infer<typeof transferRecord>;
 export const transferList = z.object({ transfers: z.array(transferRecord) });
@@ -80,6 +80,14 @@ export const auditPage = z.object({
   events: z.array(z.object({ id: z.string(), at: z.string(), actor: z.string(), scope: z.string(), action: z.string(), object: z.string(), requestId: z.string() })),
 });
 export type AuditEntry = z.infer<typeof auditPage>["events"][number];
+/** Ledger-derived contract governance (torrent-escrow ABI v2), via GET /v1/contract. */
+export const contractInfo = z.object({
+  contractId: z.string(), abiVersion: z.literal(2), admin: z.string().nullable(), pendingAdmin: z.string().nullable(),
+  pendingUpgrade: z.object({ wasmHash: z.string(), executableAfter: z.number(), proposedAtLedger: z.number() }).nullable(),
+  upgradesLocked: z.boolean(), upgrades: z.array(z.object({ wasmHash: z.string(), ledger: z.number() })),
+  indexerStatus: z.enum(["SYNCING", "SYNCED", "RECONCILING"]), latestObservedLedger: z.number(),
+});
+export type ContractInfo = z.infer<typeof contractInfo>;
 export const ledgerEvents = z.object({
   schemaVersion: z.literal(1), network: z.string(), nextCursor: z.string().nullable(), indexerStatus: z.string(),
   events: z.array(z.object({ id: z.string(), ledger: z.number(), name: z.string(), txHash: z.string(), finality: z.enum(["SUBMITTED", "CONFIRMED"]) }).passthrough()),

@@ -1,4 +1,4 @@
-import type { Coverage, Intent, IntentState, Right } from "@/lib/api/schemas";
+import type { ContractInfo, Coverage, Intent, IntentState, Right } from "@/lib/api/schemas";
 import { formatBaseUnits } from "@/lib/money";
 
 export type Tone = "neutral" | "pending" | "good" | "bad" | "warn";
@@ -20,7 +20,10 @@ export function intentStatus(state: IntentState): { label: string; tone: Tone; f
 }
 
 export const intentTitle = (i: Pick<Intent, "kind">): string =>
-  ({ FUNDING: "Fund escrow", TRANSFER_PROPOSE: "Propose right transfer", TRANSFER_ACCEPT: "Accept right transfer", CLAIM: "Claim payout" })[i.kind];
+  ({
+    FUNDING: "Fund escrow", TRANSFER_PROPOSE: "Propose right transfer", TRANSFER_ACCEPT: "Accept right transfer",
+    TRANSFER_CANCEL: "Withdraw transfer offer", CLAIM: "Claim payout", POOL_LEAVE: "Leave the pool",
+  })[i.kind];
 
 export function secondsLeft(expiresAt: string, now: Date): number {
   return Math.max(0, Math.floor((Date.parse(expiresAt) - now.getTime()) / 1000));
@@ -54,6 +57,7 @@ export function coverageView(c: Coverage, decimals = 7): CoverageView {
   if (c.indexerStatus === "RECONCILING") { tone = "bad"; headline = "Ledger data is under reconciliation"; detail.push("Sensitive actions are paused until the discrepancy is resolved."); }
   else if (c.indexerStatus === "SYNCING" || c.lagLedgers > 0) { if (tone === "good") tone = "warn"; detail.push(`Ledger data is ${c.lagLedgers} ledger(s) behind; numbers may be out of date.`); }
   if (c.poolStatus === "Paused") { if (tone === "good") tone = "warn"; detail.push("The pool is paused: deposits, issuance and transfers are disabled; claims still work."); }
+  if (c.poolStatus === "Closed") { if (tone === "good") tone = "warn"; detail.push("The pool is closed: no new funding, rights or transfers. Every issued right is still paid at maturity."); }
   return { tone, headline, detail, numbers, freshness: `As of ledger ${c.asOfLedger} (Stellar Testnet)` };
 }
 
@@ -68,15 +72,42 @@ export function rightRow(r: Right, myAddress: string | null, now: Date, decimals
   const maturity = new Date(r.maturity * 1000);
   const matured = maturity.getTime() <= now.getTime();
   const active = r.state === "Issued";
-  let note = "";
+  let note: string;
   if (r.state === "Claimed") note = "Paid out";
+  else if (matured) note = "Matured: ready to claim";
   else if (r.pendingTransfer) note = "Transfer proposal open";
-  else if (!matured) note = `Matures ${maturity.toISOString().slice(0, 10)}`;
+  else note = `Matures ${maturity.toISOString().slice(0, 10)}`;
   return {
     id: r.rightId, amount: formatBaseUnits(r.amount, decimals), ownedByMe, maturity, matured, state: r.state,
-    canProposeTransfer: ownedByMe && active && !r.pendingTransfer,
+    // Contract timing rule (ABI v2): only unmatured rights can change hands.
+    canProposeTransfer: ownedByMe && active && !matured && !r.pendingTransfer,
     canClaim: ownedByMe && active && matured, note,
   };
+}
+
+/** Longest offer the contract will accept: at most 30 days and never past the right's maturity. */
+export function maxOfferHours(r: Pick<Right, "maturity">, now: Date): number {
+  return Math.max(0, Math.min(720, Math.floor((r.maturity * 1000 - now.getTime()) / 3600_000)));
+}
+
+export interface GovernanceView { tone: Tone; title: string; body: string }
+
+/**
+ * Upgrade disclosure. The contract announces every upgrade on-chain a week before it can take
+ * effect; members should see it while they can still claim matured rights or leave.
+ */
+export function governanceView(c: ContractInfo, now: Date): GovernanceView | null {
+  if (c.pendingUpgrade) {
+    const at = new Date(c.pendingUpgrade.executableAfter * 1000);
+    const ready = at.getTime() <= now.getTime();
+    return {
+      tone: "warn",
+      title: ready ? "A contract upgrade can now be installed" : "A contract upgrade has been announced",
+      body: `New code ${c.pendingUpgrade.wasmHash.slice(0, 12)}… was proposed on-chain and ${ready ? "may be installed at any time" : `cannot take effect before ${at.toISOString().slice(0, 16).replace("T", " ")} UTC`}. Escrowed funds and rights carry over; review the change before then.`,
+    };
+  }
+  if (c.upgradesLocked) return { tone: "good", title: "Contract code is locked", body: "The escrow contract can never be upgraded again." };
+  return null;
 }
 
 export function describeDescriptor(i: Pick<Intent, "descriptor">, decimals = 7): string {

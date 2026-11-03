@@ -15,6 +15,7 @@ describe("consumer contract with torrent-api (mirrored OpenAPI 3.1)", () => {
       ["get", "/v1/circles"], ["post", "/v1/circles"], ["get", "/v1/circles/{id}"], ["get", "/v1/circles/{id}/coverage"],
       ["get", "/v1/circles/{id}/rights"], ["post", "/v1/circles/{id}/funding-intents"], ["post", "/v1/rights/{id}/transfers/intent"],
       ["post", "/v1/transfers/{id}/approve"], ["post", "/v1/rights/{id}/claim-intent"], ["get", "/v1/intents/{id}"], ["post", "/v1/intents/{id}/submit"],
+      ["post", "/v1/transfers/{id}/cancel"], ["post", "/v1/circles/{id}/leave-intent"], ["get", "/v1/contract"],
     ];
     expect(doc.openapi).toBe("3.1.0");
     for (const [m, p] of used) expect(doc.paths[p]?.[m], `${m} ${p}`).toBeTruthy();
@@ -29,7 +30,7 @@ describe("consumer contract with torrent-api (mirrored OpenAPI 3.1)", () => {
     );
   });
   it("idempotent endpoints still declare the header the client sends", () => {
-    for (const p of ["/v1/circles/{id}/funding-intents", "/v1/rights/{id}/transfers/intent", "/v1/transfers/{id}/approve", "/v1/rights/{id}/claim-intent"]) {
+    for (const p of ["/v1/circles/{id}/funding-intents", "/v1/rights/{id}/transfers/intent", "/v1/transfers/{id}/approve", "/v1/rights/{id}/claim-intent", "/v1/transfers/{id}/cancel", "/v1/circles/{id}/leave-intent"]) {
       const params = (doc.paths[p]!["post"] as unknown as { parameters: { name: string }[] }).parameters.map((x) => x.name);
       expect(params, p).toContain("Idempotency-Key");
     }
@@ -46,6 +47,7 @@ describe("consumer contract: REAL recorded torrent-api responses parse with the 
     submitIntent: S.intentEnvelope, getCoverage: S.coverage, listRights: S.rights, createTransferIntent: S.transferWithIntent,
     submitTransfer: S.intentEnvelope, approveTransfer: S.transferWithIntent, createClaimIntent: S.intentEnvelope,
     listTransfers: S.transferList, listIntents: S.intentList, circleAudit: S.auditPage, ledgerEvents: S.ledgerEvents,
+    cancelTransfer: S.transferWithIntent, createLeaveIntent: S.intentEnvelope, getContract: S.contractInfo,
   };
   it("covers every recorded example and each one parses", () => {
     expect(Object.keys(ex.examples).sort()).toEqual(Object.keys(map).sort());
@@ -57,5 +59,9 @@ describe("consumer contract: REAL recorded torrent-api responses parse with the 
     expect(e.submitIntent.intent.state).toBe("SUBMITTED");
     expect(e.listTransfers.transfers[0]?.status).toBe("ACCEPTING");
     expect(e.approveTransfer.intent.kind).toBe("TRANSFER_ACCEPT");
+    const v2 = ex.examples as { cancelTransfer: { intent: { kind: string; descriptor: { function: string } } }; createLeaveIntent: { intent: { descriptor: { function: string } } }; getContract: { pendingUpgrade: unknown } };
+    expect(v2.cancelTransfer.intent).toMatchObject({ kind: "TRANSFER_CANCEL", descriptor: { function: "cancel_transfer" } });
+    expect(v2.createLeaveIntent.intent.descriptor.function).toBe("leave_pool");
+    expect(v2.getContract.pendingUpgrade).not.toBeNull();
   });
 });

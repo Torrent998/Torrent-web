@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { coverageView, describeDescriptor, intentStatus, rightRow, secondsLeft } from "@/features/view";
-import type { Coverage, Right } from "@/lib/api/schemas";
+import { coverageView, describeDescriptor, governanceView, intentStatus, intentTitle, maxOfferHours, rightRow, secondsLeft } from "@/features/view";
+import type { ContractInfo, Coverage, Right } from "@/lib/api/schemas";
 import { INTENT_STATES } from "@/lib/api/schemas";
 
 const bound = (over: Partial<Extract<Coverage, { bound: true }>> = {}): Coverage => ({
@@ -48,9 +48,9 @@ describe("coverageView", () => {
 describe("rightRow", () => {
   const r: Right = { rightId: "5", poolId: "1", amount: "1000000000", owner: "GME", maturity: 2000, state: "Issued", pendingTransfer: null, issuedAtLedger: 1, claimedAtLedger: null };
   const before = new Date(1000 * 1000); const after = new Date(3000 * 1000);
-  it("owner can propose transfer any time, claim only after maturity", () => {
+  it("owner can propose a transfer before maturity and claim only after it", () => {
     expect(rightRow(r, "GME", before)).toMatchObject({ canProposeTransfer: true, canClaim: false, ownedByMe: true });
-    expect(rightRow(r, "GME", after)).toMatchObject({ canProposeTransfer: true, canClaim: true });
+    expect(rightRow(r, "GME", after)).toMatchObject({ canProposeTransfer: false, canClaim: true });
   });
   it("others, claimed rights and open proposals offer no actions", () => {
     expect(rightRow(r, "GOTHER", after)).toMatchObject({ canProposeTransfer: false, canClaim: false, ownedByMe: false });
@@ -68,5 +68,38 @@ describe("misc", () => {
   it("descriptor text shows exact base units next to the human amount", () => {
     const t = describeDescriptor({ descriptor: { contractId: "C1", function: "deposit", args: [{ name: "amount", type: "i128", value: "15000000" }] } });
     expect(t).toContain("1.5 (15000000 base units)");
+  });
+});
+
+describe("ABI v2 view rules", () => {
+  const right = (over: Partial<Right> = {}): Right => ({ rightId: "1", poolId: "1", amount: "10000000", owner: "GME", maturity: 10_000, state: "Issued", pendingTransfer: null, issuedAtLedger: 1, claimedAtLedger: null, ...over });
+  it("a matured right can be claimed but not transferred (contract timing rule)", () => {
+    const before = rightRow(right(), "GME", new Date(9_000 * 1000));
+    expect(before).toMatchObject({ canProposeTransfer: true, canClaim: false });
+    const after = rightRow(right(), "GME", new Date(10_000 * 1000));
+    expect(after).toMatchObject({ canProposeTransfer: false, canClaim: true, note: "Matured: ready to claim" });
+  });
+  it("offers are capped at 30 days and at the right's maturity", () => {
+    expect(maxOfferHours({ maturity: 100 * 86400 }, new Date(0))).toBe(720);
+    expect(maxOfferHours({ maturity: 5 * 3600 + 1800 }, new Date(0))).toBe(5);
+    expect(maxOfferHours({ maturity: 10 }, new Date(20_000))).toBe(0);
+  });
+  it("closed pools are disclosed in coverage", () => {
+    const v = coverageView(bound({ poolStatus: "Closed" }));
+    expect(v.tone).toBe("warn");
+    expect(v.detail.join(" ")).toMatch(/closed.*still paid at maturity/i);
+  });
+  it("governance: an announced upgrade is a warning with its earliest time; a lock is reassuring; nothing otherwise", () => {
+    const c: ContractInfo = { contractId: "C", abiVersion: 2, admin: null, pendingAdmin: null, pendingUpgrade: null, upgradesLocked: false, upgrades: [], indexerStatus: "SYNCED", latestObservedLedger: 1 };
+    expect(governanceView(c, new Date(0))).toBeNull();
+    const pending = { ...c, pendingUpgrade: { wasmHash: "ab".repeat(32), executableAfter: 86400, proposedAtLedger: 5 } };
+    expect(governanceView(pending, new Date(0))).toMatchObject({ tone: "warn", title: /announced/ });
+    expect(governanceView(pending, new Date(0))!.body).toMatch(/1970-01-02 00:00 UTC/);
+    expect(governanceView(pending, new Date(86400_000))!.title).toMatch(/can now be installed/);
+    expect(governanceView({ ...c, upgradesLocked: true }, new Date(0))).toMatchObject({ tone: "good" });
+  });
+  it("names every intent kind", () => {
+    expect(intentTitle({ kind: "TRANSFER_CANCEL" })).toBe("Withdraw transfer offer");
+    expect(intentTitle({ kind: "POOL_LEAVE" })).toBe("Leave the pool");
   });
 });

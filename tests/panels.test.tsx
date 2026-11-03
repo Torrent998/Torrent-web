@@ -10,7 +10,7 @@ import type { Intent, Right, TransferRecord } from "@/lib/api/schemas";
 
 const ME = "G" + "B".repeat(55); const OTHER = "G" + "C".repeat(55);
 const tr = (over: Partial<TransferRecord> = {}): TransferRecord => ({
-  id: "trf_1", circleId: "c", rightId: "5", from: OTHER, to: ME, expiresAt: "2026-03-02T00:00:00Z", proposeIntentId: "i1", acceptIntentId: null,
+  id: "trf_1", circleId: "c", rightId: "5", from: OTHER, to: ME, expiresAt: "2026-03-02T00:00:00Z", proposeIntentId: "i1", acceptIntentId: null, cancelIntentId: null,
   chainTransferId: "77", createdAt: "x", status: "AWAITING_RECIPIENT", ...over,
 });
 const intent: Intent = { id: "int_2", schemaVersion: 1, requestId: "r", kind: "TRANSFER_ACCEPT", circleId: "c", state: "AWAITING_SIGNATURE", descriptor: { contractId: "C", function: "accept_transfer", args: [] }, txHash: null, failureReason: null, verifiedAtLedger: 1, expiresAt: "x", createdAt: "2026-03-01", updatedAt: "x" };
@@ -33,6 +33,18 @@ describe("TransfersPanel (recipient approval)", () => {
     render(<TransfersPanel transfers={[tr()]} myAddress={ME} client={{ approveTransfer } as unknown as ApiClient} onIntent={vi.fn()} />);
     await userEvent.click(screen.getByRole("button", { name: /review and approve/i }));
     expect(await screen.findByRole("alert")).toHaveTextContent("on-chain proposal expired");
+  });
+  it("lets the proposer withdraw an on-chain offer (cancel_transfer signing request)", async () => {
+    const cancelIntent: Intent = { ...intent, id: "int_3", kind: "TRANSFER_CANCEL", descriptor: { contractId: "C", function: "cancel_transfer", args: [] } };
+    const cancelTransfer = vi.fn().mockResolvedValue({ transfer: tr(), intent: cancelIntent });
+    const onIntent = vi.fn();
+    render(<TransfersPanel transfers={[tr({ id: "trf_out", from: ME, to: OTHER }), tr({ id: "trf_in" }), tr({ id: "trf_c", from: ME, to: OTHER, status: "CANCELLED" })]} myAddress={ME} client={{ cancelTransfer } as unknown as ApiClient} onIntent={onIntent} />);
+    const w = screen.getAllByRole("button", { name: /withdraw offer/i });
+    expect(w).toHaveLength(1);
+    await userEvent.click(w[0]!);
+    expect(cancelTransfer).toHaveBeenCalledWith("trf_out");
+    expect(onIntent).toHaveBeenCalledWith(cancelIntent);
+    expect(screen.getByText(/Withdrawn by the proposer: ownership did not change/)).toBeInTheDocument();
   });
   it("empty state", () => {
     render(<TransfersPanel transfers={[]} myAddress={ME} client={{} as ApiClient} onIntent={vi.fn()} />);
