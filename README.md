@@ -24,16 +24,28 @@ Part of **Torrent** — ownership of *when* money becomes available.
 
 The landing page and the web app in one Next.js codebase:
 
-- **Landing page** (`/`): value proposition, how it works, features, trust and safety, architecture and FAQ.
-  The hero illustration is animated, clearly labelled as synthetic, and static under `prefers-reduced-motion`.
-- **App** (`/circles`, `/circles/[id]`, `/invitations`): wallet-signature sign-in, circles, ledger-derived escrow
-  coverage, payout rights, transfer proposals and recipient approval, claims, invitations, claim history and the
-  organizer audit trail.
+- **Landing page** (`/`): value proposition, how it works, an animated savings-circle story (contributions fill
+  the escrow, rights are issued per payout slot, two members swap slots with four signatures, claims pay out), an
+  interactive "trade your payout date" explainer, illustrated "who is it for" cards, features, an "under the hood"
+  contract diagram whose slider runs the backing-invariant check, trust and safety, architecture and FAQ. All
+  illustrations use labelled synthetic members and amounts, inline SVG and CSS, and are static under
+  `prefers-reduced-motion`.
+- **App** (`/circles`, `/circles/[id]`, `/invitations`): wallet sign-in (Freighter or sign-and-paste), circles,
+  ledger-derived escrow coverage, payout rights, transfer proposals, recipient approval and proposer withdrawal,
+  claims, leaving a pool, contract-upgrade disclosure, invitations, claim history and the organizer audit trail.
 - **Signing panel**: every request shows the exact contract call, an expiry, and an honest lifecycle
   (`Sign -> Submit -> Ledger confirms`). Nothing is shown as settled until the indexer observes it on the ledger.
 
 Dark and light themes, responsive down to 360 px, keyboard and screen-reader friendly. The app never asks for,
 receives or stores a secret key.
+
+| Savings-circle story | Trade your payout date (phone, dark) |
+|---|---|
+| <img src="./docs/screenshots/landing-circle-story-1440-light.png" alt="Animated savings-circle illustration: four members paid into the Soroban escrow, rights issued per slot, Feb and Mar slots swapping with two signatures each" width="560" /> | <img src="./docs/screenshots/landing-trade-your-date-390-dark.png" alt="Interactive explainer: pick your slot and the slot you want; the swap is shown as two transfers with unchanged amounts" width="220" /> |
+
+| Under the hood | Who it is for |
+|---|---|
+| <img src="./docs/screenshots/landing-under-the-hood-1440-dark.png" alt="Contract diagram: wallet signs, issue_right, invariant check, event emitted, then indexer, API and web read it back; a slider tests a new right against the invariant" width="400" /> | <img src="./docs/screenshots/landing-who-for-1440-light.png" alt="Illustrated cards: savings circles, members who need money sooner, members happy to wait, organizers" width="400" /> |
 
 | Circle (desktop) | Circle (phone, dark) |
 |---|---|
@@ -65,12 +77,12 @@ The landing page works on its own. The app needs a running [Torrent-api](https:/
 
 | Area | State |
 |---|---|
-| Landing page (hero, how it works, features, safety, architecture, FAQ) | implemented, tested |
+| Landing page (hero, how it works, savings-circle story, trade-your-date explainer, audiences, features, under-the-hood invariant diagram, safety, architecture, FAQ) | implemented, tested |
 | Wallet-signature sign-in (challenge -> sign -> session), `WalletAdapter` interface | implemented |
-| Wallet adapters | **Manual** ("sign elsewhere and paste") and a development-only **TEST WALLET** (`NEXT_PUBLIC_ENABLE_TEST_WALLET=1`, loudly labelled, not submittable on a real network). **No browser-wallet adapter yet** |
-| Circles, coverage, rights, funding, transfer proposal and approval, claims, invitations, history, audit trail | implemented |
+| Wallet adapters | **Freighter** (`@stellar/freighter-api`, feature-detected, fails closed on network/account/transaction mismatch; tested with a stand-in extension, **never run against live Testnet**), **Manual** ("sign elsewhere and paste") and a development-only **TEST WALLET** (`NEXT_PUBLIC_ENABLE_TEST_WALLET=1`, loudly labelled) |
+| Circles, coverage, rights, funding, transfer proposal, approval and withdrawal, claims, leaving a pool, closed-pool and upgrade disclosure (torrent-escrow ABI v2), invitations, history, audit trail | implemented |
 | Honest states: loading, empty, retryable outage, refusal, expired, submitted vs confirmed, reconciling | implemented |
-| Tests | 74 (view models, components, page flows, landing sections, wallet adapters, API client) |
+| Tests | 102 (view models, components, page flows, landing sections, wallet adapters, API client) |
 | Cross-repo contract | the 21 real recorded torrent-api responses parse with the web schemas; endpoints checked against the mirrored OpenAPI |
 | End-to-end against a live API, indexer, Testnet and a real wallet | **never run** (no deployment exists) |
 | Security audit / Mainnet | **no** / **no** |

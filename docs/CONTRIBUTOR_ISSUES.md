@@ -4,15 +4,7 @@ Scoped tasks for contributors, including Drips Wave participants. Each one is re
 
 Sizes: small (a day or two), medium (up to a week), large (more, usually with an ADR).
 
-## 1. Browser-wallet adapter (Freighter)
-
-- **Motivation:** Users must currently sign elsewhere and paste. A browser-wallet adapter removes that friction.
-- **Touches:** `src/lib/wallet/` (implement `WalletAdapter` from `types.ts`), `src/components/wallet-connect.tsx`
-- **Acceptance:** Sign-in and intent signing work through the adapter; cancel, wrong-network and wrong-address paths show errors and submit nothing; tests use a mocked extension API that is labelled as such.
-- **Size:** medium
-- **Non-goals:** Storing keys; supporting Mainnet.
-
-## 2. Playwright end-to-end suite on recorded fixtures
+## 1. Playwright end-to-end suite on recorded fixtures
 
 - **Motivation:** Component tests do not cover routing, theming or the real browser.
 - **Touches:** new `tests/e2e/`, CI workflow
@@ -20,7 +12,7 @@ Sizes: small (a day or two), medium (up to a week), large (more, usually with an
 - **Size:** medium
 - **Non-goals:** Live network or chain calls.
 
-## 3. Low-connectivity banner and offline read-only mode
+## 2. Low-connectivity banner and offline read-only mode
 
 - **Motivation:** The SRD requires retry, offline read-only and recovery messaging.
 - **Touches:** `src/lib/use-async.ts`, `src/components/ui.tsx`
@@ -28,7 +20,7 @@ Sizes: small (a day or two), medium (up to a week), large (more, usually with an
 - **Size:** small
 - **Non-goals:** Caching data as an accounting record.
 
-## 4. Localized dates and maturity countdowns
+## 3. Localized dates and maturity countdowns
 
 - **Motivation:** Maturities and offer expiries are shown as ISO strings.
 - **Touches:** `src/features/view.ts` and panels
@@ -36,7 +28,7 @@ Sizes: small (a day or two), medium (up to a week), large (more, usually with an
 - **Size:** small
 - **Non-goals:** Changing stored formats.
 
-## 5. Automated accessibility checks
+## 4. Automated accessibility checks
 
 - **Motivation:** Accessibility is reviewed by hand today.
 - **Touches:** tests
@@ -44,6 +36,14 @@ Sizes: small (a day or two), medium (up to a week), large (more, usually with an
 - **Size:** small
 - **Non-goals:** Visual redesign.
 
+## 5. Live Freighter run on Testnet
+
+- **Motivation:** The Freighter adapter and `RpcTxPreparer` are tested with a stand-in extension and a mocked RPC only.
+- **Touches:** `src/lib/wallet/freighter.ts`, docs
+- **Acceptance:** After a Torrent-contracts Testnet deployment, sign in, fund, propose/accept and claim with Freighter against a local API and indexer; transaction hashes and any fixes recorded.
+- **Size:** small
+- **Non-goals:** Other wallets; Mainnet.
+
 ## Already done
 
-Earlier items on this list (cross-repo schemas and golden fixtures, per-repo CI, the intent state machine and reconciliation, coverage-invariant and double-claim property tests, transfer authorization, and indexer replay/backfill) are implemented; see each repository's README status table.
+Earlier items on this list (the Freighter browser-wallet adapter, the ABI v2 flows, cross-repo schemas and golden fixtures, per-repo CI, the intent state machine and reconciliation, coverage-invariant and double-claim property tests, transfer authorization, and indexer replay/backfill) are implemented; see each repository's README status table.
