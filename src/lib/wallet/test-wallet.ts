@@ -1,16 +1,7 @@
-import { Account, Address, Contract, Keypair, TransactionBuilder, nativeToScVal, type xdr } from "@stellar/stellar-sdk";
+import { Account, Contract, Keypair, TransactionBuilder } from "@stellar/stellar-sdk";
 import type { Intent } from "@/lib/api/schemas";
+import { toScVal } from "./scval";
 import type { WalletAdapter } from "./types";
-
-type Arg = Intent["descriptor"]["args"][number];
-const toScVal = (a: Arg): xdr.ScVal => {
-  switch (a.type) {
-    case "u64": return nativeToScVal(BigInt(a.value), { type: "u64" });
-    case "i128": return nativeToScVal(BigInt(a.value), { type: "i128" });
-    case "address": return new Address(a.value).toScVal();
-    case "bytes32": return nativeToScVal(Buffer.from(a.value, "hex"), { type: "bytes" });
-  }
-};
 
 /**
  * TEST ADAPTER - NOT A WALLET. Holds a throwaway random Testnet keypair in memory (never persisted)
