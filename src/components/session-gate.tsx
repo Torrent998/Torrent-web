@@ -24,7 +24,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
       </div>
       <Card title="Sign in with your wallet">
         <p className="mb-4 text-sm text-muted">
-          Stellar Testnet only. Enter your public address, sign the challenge in your own wallet, then paste the signature back here.
+          Stellar Testnet only. Use the Freighter extension if it is installed, or enter your public address, sign the challenge in your own wallet and paste the signature back here.
         </p>
         <WalletConnect mode="signin" />
       </Card>

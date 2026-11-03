@@ -89,7 +89,7 @@ export const STATUS: StatusRow[] = [
   { item: "Network", state: "Stellar Testnet only", tone: "warn", note: "Synthetic funds and members. The contract is not yet deployed to Testnet; all contract tests run in the Soroban test host." },
   { item: "Security audit", state: "Not audited", tone: "bad", note: "No third-party review has been performed. Do not use with anything of value." },
   { item: "Mainnet / real funds", state: "Not available", tone: "bad", note: "Mainnet requires an external security review and legal and compliance work first." },
-  { item: "Wallets", state: "Manual signing", tone: "neutral", note: "Sign elsewhere and paste the result. A browser-wallet adapter is not built yet." },
+  { item: "Wallets", state: "Freighter or manual signing", tone: "neutral", note: "The Freighter browser extension (Testnet) or sign elsewhere and paste. The Freighter flow has not yet been run against a live Testnet deployment." },
   { item: "Source code", state: "Open source, MIT", tone: "good", note: "Four repositories with independent tests and CI. Cross-repository boundaries are tested against real recorded fixtures." },
 ];
 
@@ -100,6 +100,6 @@ export const FAQS: Faq[] = [
   { q: "Is Torrent live? Can I use real money?", a: "No. Torrent is an open-source prototype for Stellar Testnet with synthetic funds. It is not audited, not on Mainnet, and transferability of payout rights would need legal review before any real use." },
   { q: "Does Torrent hold my funds or keys?", a: "No. Funds sit in the Soroban escrow contract, which only releases them according to its rules. The API holds no keys and no balances, and the web app never asks for a secret key or seed phrase." },
   { q: "What happens if a transaction times out?", a: "The request moves to a reconciling state and is resolved by its transaction hash. It is never silently retried with different parameters, and it is never shown as settled until the ledger confirms it." },
-  { q: "Which wallets are supported?", a: "Today you sign with your own tool and paste the signed result. A development-only test wallet exists behind a flag and is clearly labeled. A browser-wallet adapter is a planned contribution." },
+  { q: "Which wallets are supported?", a: "The Freighter browser extension, offered when it is installed and set to Testnet, or any tool you sign with yourself and paste the result. A development-only test wallet exists behind a flag and is clearly labeled." },
   { q: "How can I contribute?", a: "Each repository has a CONTRIBUTING guide and a list of scoped contributor issues. Pick the repository that owns the behavior you want to change; cross-repository changes are coordinated through versioned fixtures." },
 ];

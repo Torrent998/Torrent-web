@@ -103,7 +103,9 @@ export function governanceView(c: ContractInfo, now: Date): GovernanceView | nul
     return {
       tone: "warn",
       title: ready ? "A contract upgrade can now be installed" : "A contract upgrade has been announced",
-      body: `New code ${c.pendingUpgrade.wasmHash.slice(0, 12)}… was proposed on-chain and ${ready ? "may be installed at any time" : `cannot take effect before ${at.toISOString().slice(0, 16).replace("T", " ")} UTC`}. Escrowed funds and rights carry over; review the change before then.`,
+      body: ready
+        ? `New code ${c.pendingUpgrade.wasmHash.slice(0, 12)}… was announced on-chain and its 7-day notice has passed: the admin may install it at any time. Escrowed funds and rights carry over.`
+        : `New code ${c.pendingUpgrade.wasmHash.slice(0, 12)}… was proposed on-chain and cannot take effect before ${at.toISOString().slice(0, 16).replace("T", " ")} UTC. Escrowed funds and rights carry over; review the change before then.`,
     };
   }
   if (c.upgradesLocked) return { tone: "good", title: "Contract code is locked", body: "The escrow contract can never be upgraded again." };
