@@ -15,11 +15,13 @@ const circle = { id: "cir_1", name: "Ajo", ruleSet: { tokenContractId: "C", maxM
 const coverage = { circleId: "cir_1", bound: true as const, poolId: "1", totals: { funded: "1000000000", reserved: "0", claimed: "0", withdrawn: "0" }, unreserved: "1000000000", fullyBacked: true, poolStatus: "Active" as const, indexerStatus: "SYNCED" as const, asOfLedger: 9, lagLedgers: 0, observedAt: "x" };
 const intent: Intent = { id: "int_9", schemaVersion: 1, requestId: "r", kind: "FUNDING", circleId: "cir_1", state: "AWAITING_SIGNATURE", descriptor: { contractId: "C1", function: "deposit", args: [{ name: "amount", type: "i128", value: "25000000" }] }, txHash: null, failureReason: null, verifiedAtLedger: 9, expiresAt: new Date(Date.now() + 600_000).toISOString(), createdAt: "x", updatedAt: "x" };
 
+const gov = { contractId: "C1", abiVersion: 2 as const, admin: null, pendingAdmin: null, pendingUpgrade: null, upgradesLocked: false, upgrades: [], indexerStatus: "SYNCED" as const, latestObservedLedger: 9 };
 function client(over: Record<string, unknown> = {}) {
   return {
     getCircle: vi.fn().mockResolvedValue(circle), coverage: vi.fn().mockResolvedValue(coverage),
     rights: vi.fn().mockResolvedValue({ circleId: "cir_1", bound: true, asOfLedger: 9, rights: [{ rightId: "5", poolId: "1", amount: "1000000000", owner: ME, maturity: 1, state: "Issued", pendingTransfer: null, issuedAtLedger: 1, claimedAtLedger: null }] }),
     listTransfers: vi.fn().mockResolvedValue({ transfers: [] }), listIntents: vi.fn().mockResolvedValue({ intents: [] }),
+    contract: vi.fn().mockResolvedValue(gov), leaveIntent: vi.fn().mockResolvedValue({ intent: { ...intent, kind: "POOL_LEAVE" } }),
     fundingIntent: vi.fn().mockResolvedValue(intent), claimIntent: vi.fn().mockResolvedValue({ intent: { ...intent, kind: "CLAIM" } }),
     ...over,
   } as unknown as ApiClient;
@@ -67,5 +69,27 @@ describe("circle page", () => {
     expect(screen.queryByText(/Fully backed/)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(screen.getByText(/Fully backed/)).toBeInTheDocument());
+  });
+
+  it("announces a pending contract upgrade with its timelock", async () => {
+    renderPage(client({ contract: vi.fn().mockResolvedValue({ ...gov, pendingUpgrade: { wasmHash: "ef".repeat(32), executableAfter: 4_102_444_800, proposedAtLedger: 8 } }) }));
+    const banner = await screen.findByTestId("governance");
+    expect(banner).toHaveTextContent(/upgrade has been announced/i);
+    expect(banner).toHaveTextContent(/cannot take effect before 2100-01-01 00:00 UTC/);
+  });
+  it("a closed pool accepts no funding", async () => {
+    renderPage(client({ coverage: vi.fn().mockResolvedValue({ ...coverage, poolStatus: "Closed" }) }));
+    expect(await screen.findByText(/accepts no new funding/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/amount to deposit/i)).toBeDisabled();
+  });
+  it("members can request to leave only when they own no unclaimed right", async () => {
+    const other = { ...circle, organizerAddress: "G" + "Z".repeat(55) };
+    const c = client({ getCircle: vi.fn().mockResolvedValue(other), rights: vi.fn().mockResolvedValue({ circleId: "cir_1", bound: true, rights: [] }) });
+    renderPage(c);
+    await userEvent.click(await screen.findByRole("button", { name: /request leave signature/i }));
+    expect(c.leaveIntent).toHaveBeenCalledWith("cir_1");
+    expect(await screen.findByText("Needs your signature")).toBeInTheDocument();
+    renderPage(client({ getCircle: vi.fn().mockResolvedValue(other) })); // owns right #5
+    expect(await screen.findByText(/still own an unclaimed right/)).toBeInTheDocument();
   });
 });
