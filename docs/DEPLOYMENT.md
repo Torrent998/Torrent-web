@@ -32,3 +32,11 @@ LOG_LEVEL=info
 - Never republish user transactions solely because a client request timed out.
 - Test signing-key rotation, dependency outages, stale quotes, malicious user input, insufficient balances and duplicate delivery.
 - External reference infrastructure may change; check upstream project versions and licenses at build time.
+
+## Build against Testnet (2026-11-04)
+
+`.env.local`: `NEXT_PUBLIC_API_BASE_URL=http://localhost:4001`, `NEXT_PUBLIC_STELLAR_NETWORK=testnet`,
+`NEXT_PUBLIC_STELLAR_RPC_URL=https://soroban-testnet.stellar.org`. `npm run build` passes with these values.
+The web app has **not** been exercised with a real Freighter wallet; the owner's numbered click-through is in
+[FREIGHTER_WALKTHROUGH.md](./FREIGHTER_WALKTHROUGH.md). The web UI has no buttons yet for the organizer endpoints
+(create pool, issue right, close pool), which exist in the API.
