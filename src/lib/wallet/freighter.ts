@@ -54,7 +54,7 @@ export function signatureToBase64(sig: string | Uint8Array | null): string {
 }
 
 /** Feature detection: true only if the Freighter extension answers. Never throws; times out quickly. */
-export async function detectFreighter(api: Pick<FreighterApi, "isConnected">, timeoutMs = 1500): Promise<boolean> {
+export async function detectFreighter(api: Pick<FreighterApi, "isConnected">, timeoutMs = 4000): Promise<boolean> {
   try {
     const r = await Promise.race([api.isConnected(), new Promise<null>((res) => setTimeout(() => res(null), timeoutMs))]);
     return !!r && !r.error && r.isConnected;

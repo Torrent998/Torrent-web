@@ -150,6 +150,7 @@ describe("SessionGate (wallet sign-in)", () => {
   }
   it("does not accept a secret key as an address", async () => {
     renderGate({} as ApiClient);
+    await userEvent.click(screen.getByRole("button", { name: /use a different wallet/i }));
     await userEvent.type(screen.getByLabelText(/public stellar address/i), "S" + "A".repeat(55));
     expect(screen.getByRole("alert")).toHaveTextContent(/not a valid public address/);
     expect(screen.getByRole("button", { name: /sign in by signing elsewhere/i })).toBeDisabled();
@@ -162,6 +163,7 @@ describe("SessionGate (wallet sign-in)", () => {
       authLogin: vi.fn().mockResolvedValue({ token: "tok-session-0123456789", expiresAt: "x", userId: "u", address: addr, roles: ["user"] }),
     } as unknown as ApiClient;
     renderGate(client);
+    await userEvent.click(screen.getByRole("button", { name: /use a different wallet/i }));
     await userEvent.type(screen.getByLabelText(/public stellar address/i), addr);
     await userEvent.click(screen.getByRole("button", { name: /sign in by signing elsewhere/i }));
     const dlg = await screen.findByRole("dialog");
@@ -178,6 +180,7 @@ describe("SessionGate (wallet sign-in)", () => {
   it("cancelling the signature dialog leaves you signed out with a clear message", async () => {
     const client = { authChallenge: vi.fn().mockResolvedValue({ challengeId: "c", message: "m", expiresAt: "x" }), authLogin: vi.fn() } as unknown as ApiClient;
     renderGate(client);
+    await userEvent.click(screen.getByRole("button", { name: /use a different wallet/i }));
     await userEvent.type(screen.getByLabelText(/public stellar address/i), "G" + "A".repeat(55));
     await userEvent.click(screen.getByRole("button", { name: /sign in by signing elsewhere/i }));
     await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
@@ -188,6 +191,7 @@ describe("SessionGate (wallet sign-in)", () => {
   it("shows the API's refusal when the signature is rejected", async () => {
     const client = { authChallenge: vi.fn().mockResolvedValue({ challengeId: "c", message: "m", expiresAt: "x" }), authLogin: vi.fn().mockRejectedValue(new ApiError(401, "UNAUTHENTICATED", "invalid or expired challenge, or signature does not verify")) } as unknown as ApiClient;
     renderGate(client);
+    await userEvent.click(screen.getByRole("button", { name: /use a different wallet/i }));
     await userEvent.type(screen.getByLabelText(/public stellar address/i), "G" + "A".repeat(55));
     await userEvent.click(screen.getByRole("button", { name: /sign in by signing elsewhere/i }));
     await userEvent.type(await screen.findByLabelText(/signature/i), "AAAA");

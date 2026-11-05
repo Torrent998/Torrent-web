@@ -29,7 +29,7 @@ describe("WalletConnect with the Freighter browser extension", () => {
       authLogin: vi.fn().mockResolvedValue({ token: "tok-freighter-0123456789", expiresAt: "x", userId: "u", address: kp.publicKey(), roles: ["user"] }),
     } as unknown as ApiClient;
     mount(client, async () => extension());
-    await userEvent.click(await screen.findByRole("button", { name: /sign in with freighter/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /connect freighter wallet/i }));
     await waitFor(() => expect(client.authLogin).toHaveBeenCalled());
     expect(client.authChallenge).toHaveBeenCalledWith(kp.publicKey());
     const [, sig] = (client.authLogin as ReturnType<typeof vi.fn>).mock.calls[0] as [string, string];
@@ -38,19 +38,33 @@ describe("WalletConnect with the Freighter browser extension", () => {
     expect(JSON.parse(window.sessionStorage.getItem("torrent.session.v2")!)).toEqual({ token: "tok-freighter-0123456789", address: kp.publicKey() });
   });
 
-  it("explains when Freighter is missing and keeps the paste flow available", async () => {
+  it("always shows the Freighter button, explains when the extension is missing, and hides the paste flow until asked", async () => {
     mount({} as ApiClient, async () => extension({ isConnected: async () => ({ isConnected: false }) }));
     expect(await screen.findByTestId("freighter-missing")).toHaveTextContent(/not detected/i);
-    expect(screen.queryByRole("button", { name: /freighter/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /connect freighter wallet/i })).toBeDisabled();
+    expect(screen.queryByLabelText(/public stellar address/i)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /use a different wallet/i }));
+    expect(screen.getByLabelText(/public stellar address/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /sign in by signing elsewhere/i })).toBeInTheDocument();
   });
 
+  it("does not ask for an address when Freighter is available, and 'check again' re-runs detection", async () => {
+    let present = false;
+    mount({} as ApiClient, async () => extension({ isConnected: async () => ({ isConnected: present }) }));
+    await screen.findByTestId("freighter-missing");
+    present = true;
+    await userEvent.click(screen.getByRole("button", { name: /check again/i }));
+    await waitFor(() => expect(screen.getByRole("button", { name: /connect freighter wallet/i })).toBeEnabled());
+    expect(screen.queryByLabelText(/public stellar address/i)).not.toBeInTheDocument();
+  });
+
   it("treats a failing loader as missing and shows wallet errors (wrong network) without signing in", async () => {
-    mount({} as ApiClient, async () => { throw new Error("chunk failed"); });
+    const first = mount({} as ApiClient, async () => { throw new Error("chunk failed"); });
     expect(await screen.findByTestId("freighter-missing")).toBeInTheDocument();
+    first.unmount();
     const client = { authChallenge: vi.fn() } as unknown as ApiClient;
     mount(client, async () => extension({ getNetworkDetails: async () => ({ network: "PUBLIC", networkPassphrase: Networks.PUBLIC }) }));
-    await userEvent.click(await screen.findByRole("button", { name: /sign in with freighter/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /connect freighter wallet/i }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/switch it to testnet/i);
     expect(client.authChallenge).not.toHaveBeenCalled();
   });

@@ -1,5 +1,7 @@
 # Changelog
 ## Unreleased
+
+- Sign-in: "Connect Freighter wallet" is now the primary action (always shown; detection waits up to 4 s and can be re-run with "check again"). The public-address / paste-a-signature flow is hidden behind "Use a different wallet".
 - Landing page: animated savings-circle story, interactive "trade your payout date" explainer, illustrated audiences
   and an "under the hood" invariant diagram (inline SVG/CSS, reduced-motion safe, synthetic data only). Screenshots retaken.
 - Freighter browser-wallet adapter behind `WalletAdapter` (`@stellar/freighter-api` 6.0.1, feature-detected,

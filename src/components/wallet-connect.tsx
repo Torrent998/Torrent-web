@@ -22,17 +22,20 @@ export function WalletConnect({ mode, loadFreighter = loadFreighterApi }: { mode
   const [address, setAddress] = useState(mode === "attach" ? (s.address ?? "") : "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [showOther, setShowOther] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [freighter, setFreighter] = useState<{ state: Detect; api: FreighterApi | null }>({ state: "checking", api: null });
   const addrOk = /^G[A-Z2-7]{55}$/.test(address);
 
   useEffect(() => {
     let live = true;
+    setFreighter({ state: "checking", api: null });
     loadFreighter()
       .then(async (api) => ({ api, ok: await detectFreighter(api) }))
       .then(({ api, ok }) => { if (live) setFreighter({ state: ok ? "available" : "missing", api: ok ? api : null }); })
       .catch(() => { if (live) setFreighter({ state: "missing", api: null }); });
     return () => { live = false; };
-  }, [loadFreighter]);
+  }, [loadFreighter, attempt]);
 
   async function go(make: () => Promise<WalletAdapter>) {
     setBusy(true); setErr(null);
@@ -45,29 +48,41 @@ export function WalletConnect({ mode, loadFreighter = loadFreighterApi }: { mode
   }
 
   const api = freighter.api;
+  const checking = freighter.state === "checking";
+  const verb = mode === "signin" ? "Connect Freighter wallet" : "Reconnect Freighter";
   return (
     <div className="grid gap-3">
-      {freighter.state === "available" && api && (
-        <div className="grid gap-2 rounded-2xl border border-line bg-bg-subtle/50 p-3">
-          <button type="button" className={btn} disabled={busy}
-            onClick={() => go(async () => new FreighterWalletAdapter(api, new RpcTxPreparer(stellarRpcUrl()), s.networkPassphrase))}>
-            {busy ? "Waiting for Freighter…" : mode === "signin" ? "Sign in with Freighter" : "Reconnect Freighter"}
-          </button>
+      <div className="grid gap-2 rounded-2xl border border-line bg-bg-subtle/50 p-3">
+        <button type="button" className={btn} disabled={busy || checking || !api} data-testid="freighter-connect"
+          onClick={() => api && go(async () => new FreighterWalletAdapter(api, new RpcTxPreparer(stellarRpcUrl()), s.networkPassphrase))}>
+          {busy ? "Waiting for Freighter…" : checking ? "Looking for Freighter…" : verb}
+        </button>
+        {freighter.state === "available" && (
           <p className="text-xs text-muted">Freighter signs inside the extension; this app only receives signatures. Set Freighter to Testnet.</p>
+        )}
+        {freighter.state === "missing" && (
+          <div className="grid gap-1" data-testid="freighter-missing">
+            <p className="text-xs text-muted">
+              Freighter browser wallet not detected. <a className="underline hover:text-fg" href="https://www.freighter.app/" target="_blank" rel="noreferrer">Install Freighter</a>, unlock it and allow this site, then{" "}
+              <button type="button" className="underline hover:text-fg" onClick={() => setAttempt((n) => n + 1)}>check again</button>.
+            </p>
+          </div>
+        )}
+      </div>
+      <button type="button" className="text-left text-xs text-muted underline hover:text-fg" aria-expanded={showOther} onClick={() => setShowOther((v) => !v)}>
+        {showOther ? "Hide other wallet options" : "Use a different wallet (sign elsewhere and paste)"}
+      </button>
+      {showOther && (
+        <div className="grid gap-2 rounded-2xl border border-line p-3">
+          <label className={label}>Public Stellar address
+            <input className={`${input} num`} value={address} readOnly={mode === "attach"} onChange={(e) => setAddress(e.target.value)} aria-invalid={address !== "" && !addrOk} />
+          </label>
+          {address !== "" && !addrOk && <p role="alert" className="text-(--bad-fg) text-sm font-medium">That is not a valid public address (56 characters starting with G). Never enter a secret key.</p>}
+          <button type="button" className={btnGhost} disabled={!addrOk || busy} onClick={() => go(async () => new ManualWalletAdapter(ask, address.trim()))}>
+            {busy ? "Waiting…" : "Sign in by signing elsewhere"}
+          </button>
         </div>
       )}
-      {freighter.state === "missing" && (
-        <p className="text-xs text-muted" data-testid="freighter-missing">
-          Freighter browser wallet not detected. <a className="underline hover:text-fg" href="https://www.freighter.app/" target="_blank" rel="noreferrer">Get Freighter</a>, or sign elsewhere and paste below.
-        </p>
-      )}
-      <label className={label}>Public Stellar address
-        <input className={`${input} num`} value={address} readOnly={mode === "attach"} onChange={(e) => setAddress(e.target.value)} aria-invalid={address !== "" && !addrOk} />
-      </label>
-      {address !== "" && !addrOk && <p role="alert" className="text-(--bad-fg) text-sm font-medium">That is not a valid public address (56 characters starting with G). Never enter a secret key.</p>}
-      <button type="button" className={freighter.state === "available" ? btnGhost : btn} disabled={!addrOk || busy} onClick={() => go(async () => new ManualWalletAdapter(ask, address.trim()))}>
-        {busy ? "Waiting…" : "Sign in by signing elsewhere"}
-      </button>
       {testWalletEnabled() && (
         <div className="grid gap-1">
           <p><Badge tone="warn">TEST WALLET</Badge> throwaway key in memory; transactions are not submittable on a real network.</p>
