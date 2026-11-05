@@ -40,3 +40,18 @@ LOG_LEVEL=info
 The web app has **not** been exercised with a real Freighter wallet; the owner's numbered click-through is in
 [FREIGHTER_WALKTHROUGH.md](./FREIGHTER_WALKTHROUGH.md). The web UI has no buttons yet for the organizer endpoints
 (create pool, issue right, close pool), which exist in the API.
+
+## Hosted deployment (2026-11-05)
+
+Vercel project `torrent-web` (domain `torrent-web1.vercel.app`), Production environment variables, all public values:
+
+| Variable | Value |
+|---|---|
+| `NEXT_PUBLIC_API_BASE_URL` | `https://torrent-api-ckiq.onrender.com` (Torrent-api on Render, free plan) |
+| `NEXT_PUBLIC_STELLAR_NETWORK` | `testnet` |
+| `NEXT_PUBLIC_STELLAR_RPC_URL` | `https://soroban-testnet.stellar.org` |
+
+`NEXT_PUBLIC_*` values are baked in at build time, so changing one needs a new build. The API only answers browsers whose
+origin is listed in its `CORS_ALLOWED_ORIGINS` (set to `https://torrent-web1.vercel.app` on Render; preflight from that origin
+returned 204 and another origin 403 when checked). The Render API is on a free instance: it sleeps when idle, so the first
+request after a pause can take 50 seconds or more.
