@@ -88,7 +88,7 @@ export const FEATURES: Feature[] = [
 
 export interface StatusRow { item: string; state: string; tone: "good" | "warn" | "bad" | "neutral"; note: string }
 export const STATUS: StatusRow[] = [
-  { item: "Network", state: "Stellar Testnet only", tone: "warn", note: "Synthetic funds and members. The contract is not yet deployed to Testnet; all contract tests run in the Soroban test host." },
+  { item: "Network", state: "Stellar Testnet only", tone: "warn", note: "Synthetic funds and members. Escrow contract CBWF73FUJDGXSXOYUVYHP3XAFSPZWX65YGFSXDSSF5VRFLEWFFTQUIJG is deployed on Testnet; the product remains an unaudited prototype." },
   { item: "Security audit", state: "Not audited", tone: "bad", note: "No third-party review has been performed. Do not use with anything of value." },
   { item: "Mainnet / real funds", state: "Not available", tone: "bad", note: "Mainnet requires an external security review and legal and compliance work first." },
   { item: "Wallets", state: "Freighter or manual signing", tone: "neutral", note: "The Freighter browser extension (Testnet) or sign elsewhere and paste. The Freighter flow has not yet been run against a live Testnet deployment." },
