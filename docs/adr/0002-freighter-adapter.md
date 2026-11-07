@@ -16,4 +16,4 @@ Status: accepted.
    prepared one is refused before anything reaches the API.
 
 ## Not done
-Never run against live Testnet (no deployment exists). Other wallets (e.g. via Stellar Wallets Kit) are not supported.
+Not yet run against a real Freighter wallet; the API, indexer and contract behind it are live on Testnet. Other wallets (e.g. via Stellar Wallets Kit) are not supported.

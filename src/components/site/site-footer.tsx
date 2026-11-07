@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ORG_URL, REPOS, repoFile } from "@/lib/site";
+import { ORG_URL, REPOS, WAVE_ISSUES_URL, repoFile } from "@/lib/site";
 import { Logo } from "./logo";
 
 export function SiteFooter() {
@@ -28,7 +28,7 @@ export function SiteFooter() {
         <nav aria-label="Project" className={col}>
           <h2 className="font-semibold">Project</h2>
           <a className={a} href={repoFile("CONTRIBUTING.md")}>Contributing</a>
-          <a className={a} href={repoFile("docs/CONTRIBUTOR_ISSUES.md")}>Contributor issues</a>
+          <a className={a} href={WAVE_ISSUES_URL}>Open Wave issues</a>
           <a className={a} href={repoFile("SECURITY.md")}>Security policy</a>
           <a className={a} href={repoFile("LICENSE")}>MIT License</a>
         </nav>

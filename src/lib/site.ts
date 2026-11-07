@@ -45,6 +45,8 @@ export const REPOS: Repo[] = [
 
 export const WEB_REPO = REPOS[3]!.url;
 export const repoFile = (path: string) => `${WEB_REPO}/blob/main/${path}`;
+/** Open, scoped Stellar Wave tasks for this repository. */
+export const WAVE_ISSUES_URL = `${WEB_REPO}/issues?q=is%3Aissue+is%3Aopen+label%3A%22Stellar+Wave%22`;
 
 export interface Step { n: string; title: string; body: string; onChain: string }
 export const STEPS: Step[] = [

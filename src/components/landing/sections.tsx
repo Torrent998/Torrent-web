@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { FAQS, FEATURES, ORG_URL, REPOS, STATUS, STEPS, repoFile, type Feature } from "@/lib/site";
+import { FAQS, FEATURES, ORG_URL, REPOS, STATUS, STEPS, WAVE_ISSUES_URL, type Feature } from "@/lib/site";
 import { IconArrowRight, IconExternal, IconGithub, IconKey, IconLedger, IconPlus, IconReplay, IconShield, IconStatus, IconSwap } from "../icons";
 import { PoolVisual } from "./pool-visual";
 import { Reveal } from "./reveal";
@@ -287,7 +287,7 @@ export function FinalCta() {
           </p>
           <div className="relative mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Link href="/circles" className={ctaPrimary}>Launch app <IconArrowRight width={18} height={18} /></Link>
-            <a href={repoFile("docs/CONTRIBUTOR_ISSUES.md")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-paper/25 px-6 py-3 font-semibold transition hover:-translate-y-0.5 hover:bg-paper/10">Contribute</a>
+            <a href={WAVE_ISSUES_URL} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-paper/25 px-6 py-3 font-semibold transition hover:-translate-y-0.5 hover:bg-paper/10">Contribute</a>
           </div>
         </div>
       </Reveal>

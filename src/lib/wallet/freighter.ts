@@ -24,7 +24,7 @@ export interface TxPreparer {
 /**
  * Real preparer: loads the account sequence from Soroban RPC, builds exactly the intent's single
  * contract invocation and lets RPC simulation add the footprint, resource fee and auth entries.
- * STATUS: compiled and unit-tested with a mocked RPC; never run against live Testnet here.
+ * STATUS: compiled and unit-tested with a mocked RPC; not yet run with a real Freighter wallet.
  */
 export class RpcTxPreparer implements TxPreparer {
   private readonly server: rpc.Server;

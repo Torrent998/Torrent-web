@@ -1,5 +1,7 @@
 # Changelog
-## Unreleased
+## 0.1.0 - 2026-11-06 (Testnet prototype)
+- **Hosted**: Vercel (`torrent-web1.vercel.app`) calling the Torrent API on Render, both pointed at the Testnet escrow. The Freighter sign-in path has not been run with a real wallet.
+- Repository documentation rewritten for public review; internal planning notes removed; the footer and landing page link to the open Stellar Wave issues; `docs.yml` checks required files and relative links.
 
 - Sign-in: "Connect Freighter wallet" is now the primary action (always shown; detection waits up to 4 s and can be re-run with "check again"). The public-address / paste-a-signature flow is hidden behind "Use a different wallet".
 - Landing page: animated savings-circle story, interactive "trade your payout date" explainer, illustrated audiences

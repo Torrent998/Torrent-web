@@ -1,6 +1,6 @@
 # ADR 0001 — Thin, honest client over torrent-api
 
-Status: accepted (M3 slice, started early because M1/M2 of the siblings exist). Sources: `docs/UX_FLOWS.md`, `docs/BRAND.md`, `docs/SRD.md`, `docs/TECHNICAL_BUILD.md`.
+Status: accepted (M3 slice, started early because M1/M2 of the siblings exist). Sources: the product notes in the git history, the product notes in the git history, the product notes in the git history, the product notes in the git history.
 
 ## Decisions
 1. **The web app is not an accounting book.** Coverage, ownership, maturity and balances are rendered only from `torrent-api` responses (themselves ledger-derived via `torrent-indexer`), with the ledger number and indexer status shown next to them. While loading or after an error no stale numbers are displayed.
@@ -9,7 +9,7 @@ Status: accepted (M3 slice, started early because M1/M2 of the siblings exist). 
 4. **Fail closed on contract drift.** Every API response is validated by Zod; a mismatch shows an error instead of rendering guessed data. `tests/contract.test.ts` checks the mirrored `fixtures/api-openapi.v1.json` (from torrent-api) against the endpoints and fields this app uses.
 5. **Money** is integer base units end to end (`src/lib/money.ts`); user input is parsed to base units with at most 7 decimals; the raw base units are shown next to human amounts in the signing request.
 6. **Idempotency**: intent-creating calls send an `Idempotency-Key`; callers can supply the key to retry safely.
-7. Design is intentionally plain (brand colors, flat mark, dark/light, reduced motion, 44px targets, labelled forms); visual polish is deferred per `docs/BRAND.md`.
+7. Design is intentionally plain (brand colors, flat mark, dark/light, reduced motion, 44px targets, labelled forms); visual polish is deferred per the product notes in the git history.
 
 ## Update (wallet + remaining screens)
 Sign-in is a wallet-signature challenge; signing goes through a `WalletAdapter` (manual paste, or a labeled throwaway TEST wallet for development). Recipient approval, invitations, claim history and the audit view now exist.

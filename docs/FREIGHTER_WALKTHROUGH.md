@@ -1,6 +1,6 @@
 # Real-wallet click-through (Freighter, Stellar Testnet)
 
-This is the one thing the coding agent cannot do for you: Freighter is a browser extension with its own approval popups.
+This is the one step automated tests cannot cover: Freighter is a browser extension with its own approval popups.
 Nothing below has been run with a real Freighter yet. Everything on the backend side of it **has** been run against
 the deployed Testnet contract (see `Torrent-contracts/docs/DEPLOYMENT.md`).
 
@@ -89,8 +89,7 @@ Check: `http://localhost:4002/v1/status` shows `"status":"SYNCED"`.
 - `curl http://localhost:4002/v1/status` and `curl http://localhost:4001/v1/contract` output.
 - API log lines around the failure (they contain no secrets).
 
-Hand the error text to a coding agent in this workspace and tell it to read `AGENTS.md`; it will reproduce the problem
-in a test first and add a regression test with the fix.
+Open an issue with that error text (never keys or seed phrases). The fix starts with a failing test that reproduces the problem.
 
 ## Known gaps (so you are not surprised)
 
