@@ -1,0 +1,12 @@
+$schema: https://api.gitbook.com/gitbook-docs.yaml
+version: 1
+site:
+  title: Torrent Documentation
+  structure:
+    - type: space
+      key: torrent-documentation
+      title: Documentation
+      path: documentation
+      default: true
+      content:
+        directory: ./gitbook
