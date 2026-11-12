@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { CoveragePanel } from "@/components/coverage-panel";
 import { IntentPanel } from "@/components/intent-panel";
 import { RightsTable } from "@/components/rights-table";
@@ -197,5 +197,37 @@ describe("SessionGate (wallet sign-in)", () => {
     await userEvent.type(await screen.findByLabelText(/signature/i), "AAAA");
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/does not verify/);
+  });
+});
+
+describe("SessionProvider configuration validation", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("renders a loud configuration error naming NEXT_PUBLIC_API_BASE_URL in production when neither baseUrl, client, nor NEXT_PUBLIC_API_BASE_URL is set", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "");
+    render(<SessionProvider><p>app-shell</p></SessionProvider>);
+    expect(screen.getByRole("alert")).toHaveTextContent(/Configuration error/i);
+    expect(screen.getByRole("alert")).toHaveTextContent(/NEXT_PUBLIC_API_BASE_URL/);
+    expect(screen.queryByText("app-shell")).not.toBeInTheDocument();
+  });
+
+  it("renders children normally in development without NEXT_PUBLIC_API_BASE_URL or in production when baseUrl/client is provided", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "");
+    const { unmount } = render(<SessionProvider><p>dev-shell</p></SessionProvider>);
+    expect(screen.getByText("dev-shell")).toBeInTheDocument();
+    unmount();
+
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "");
+    const { unmount: unmountBaseUrl } = render(<SessionProvider baseUrl="https://api.torrent.example"><p>prod-shell</p></SessionProvider>);
+    expect(screen.getByText("prod-shell")).toBeInTheDocument();
+    unmountBaseUrl();
+
+    render(<SessionProvider client={fakeClient()}><p>client-shell</p></SessionProvider>);
+    expect(screen.getByText("client-shell")).toBeInTheDocument();
   });
 });
